@@ -1,12 +1,10 @@
 [project]
-name = "phonon_simulation"
+name = "spinecho_sim"
 version = "0.0.1"
-description = "Analysis of Phonons, using Phonopy and Wannier Interpolation"
+description = "Analysis of Spin Echo Trajectories, using Phonopy and Wannier Interpolation"
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-dependencies = [
-    "phonopy>=2.41.1",
-]
+dependencies = []
 
 [dependency-groups]
 dev = [
@@ -72,7 +70,7 @@ testpaths = ["tests"]
 
 [tool.pyright]
 typeCheckingMode = "strict"
-include = ["tests", "phonon_simulation", "examples"]
+include = ["tests", "spinecho_sim", "examples"]
 reportImplicitOverride = true
 
 [build-system]

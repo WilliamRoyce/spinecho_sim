@@ -1,7 +1,7 @@
 
-Phonon Simulation Documentation
+Sin Echo Simulation Documentation
 ===============================
 
-This is a Python package designed to simplify the analysis of phonons.
+This is a Python package designed to simplify the analysis of spin echo trajectories.
 
 .. include:: modules.rst

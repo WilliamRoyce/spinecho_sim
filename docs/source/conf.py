@@ -1,4 +1,4 @@
-project = "Phonon Simulation"
+project = "Sin Echo Simulation"
 author = "Matthew Ord"
 version = "0.0.1"
 
