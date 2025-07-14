@@ -12,7 +12,21 @@
         "pylint",
         "pydocstyle",
         "numpy",
-        "isort"
+        "isort",
+        "xlabel",
+        "xlim",
+        "ylim",
+        "ylabel",
+        "rtol",
+        "ndarray",
+        "twinx",
+        "scipy",
+        "mathbf",
+        "pycache",
+        "venv"
+    ],
+    "userWords": [
+        "Larmor"
     ],
     "flagWords": [
         "hte",

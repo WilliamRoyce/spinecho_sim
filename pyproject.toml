@@ -1,15 +1,15 @@
 [project]
 name = "spinecho_sim"
-version = "0.0.1"
+version = "0.0.2"
 description = "Analysis of Spin Echo Trajectories, using Phonopy and Wannier Interpolation"
+authors = [{ name = "William Royce", email = "wr286@cam.ac.uk" }]
 readme = "README.md"
 requires-python = ">=3.13,<3.14"
-dependencies = [
-    "numpy>=2.3.1",
-]
+dependencies = ["numpy>=2.3.1", "scipy>=1.16.0"]
 
-[dependency-groups]
+[project.optional-dependencies]
 dev = [
+    "matplotlib>=3.10.3",
     "ruff",
     "pytest >=8.3.3,<9.0.0",
     "pyright ==1.1.402",
@@ -45,7 +45,7 @@ unfixable = ["T201"]
 
 [tool.ruff.lint.extend-per-file-ignores]
 "tests/**/*" = ["PLR6301", "PLR0914", "D101", "D102", "D103", "D104"]
-"examples/**/*" = ["INP001", "T201"]
+"examples/**/*" = ["INP001", "T201", "D101", "D102", "D103", "D104"]
 "docs/**/*" = ["INP001", "I002"]
 
 [tool.ruff.lint.pylint]
@@ -74,6 +74,7 @@ testpaths = ["tests"]
 typeCheckingMode = "strict"
 include = ["tests", "spinecho_sim", "examples"]
 reportImplicitOverride = true
+reportUnknownMemberType = false
 
 [build-system]
 requires = ["setuptools"]

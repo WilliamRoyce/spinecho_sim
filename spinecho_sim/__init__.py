@@ -2,5 +2,12 @@
 
 from __future__ import annotations
 
-SPINECHO_IS_COOL = True
-"""A statement about spin echo simulations being cool."""
+from spinecho_sim.solenoid import Solenoid, SolenoidSimulationResult, SolenoidTrajectory
+from spinecho_sim.state import ParticleState
+
+__all__ = [
+    "ParticleState",
+    "Solenoid",
+    "SolenoidSimulationResult",
+    "SolenoidTrajectory",
+]
