@@ -41,7 +41,7 @@ if __name__ == "__main__":
 
     fig, ax = plot_spin_components(result)
     ax.set_title(
-        r"Classical Larmor Precession in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$,"
+        r"Classical Larmor Precession in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$, "
         f"{num_spins} spins"
     )
     ax.legend(loc="lower right", fontsize="small")
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     fig, ax = plot_spin_angles(result)
     ax.set_title(
-        r"Classical Larmor Precession in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$,"
+        r"Classical Larmor Precession in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$, "
         f"{num_spins} spins"
     )
     ax.legend(loc="lower right", fontsize="small")

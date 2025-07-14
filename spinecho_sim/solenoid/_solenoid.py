@@ -62,7 +62,7 @@ class Solenoid:
         """Run the spin echo simulation using configured parameters."""
         z_points = np.linspace(0, self.length, n_steps + 1, endpoint=True)
 
-        gyromagnetic_ratio = 2.04e8  # gyromagnetic ratio (rad s^-1 T^-1)
+        gyromagnetic_ratio = -2.04e8  # gyromagnetic ratio for 3He (rad s^-1 T^-1)
 
         def _dangles_dx(
             z: float, angles: tuple[float, float]
