@@ -15,7 +15,7 @@ from spinecho_sim.state import (
 )
 
 if __name__ == "__main__":
-    particle_velocity = 500
+    particle_velocity = 714
     num_spins = 100
     initial_states = [
         ParticleState(
@@ -37,7 +37,7 @@ if __name__ == "__main__":
         magnetic_constant=3.96e-3,
         current=0.01,
     )
-    result = solenoid.simulate_trajectories(initial_states, n_steps=1000)
+    result = solenoid.simulate_angle_trajectories(initial_states, n_steps=1000)
 
     fig, ax = plot_spin_components(result)
     ax.set_title(

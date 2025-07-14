@@ -3,7 +3,6 @@
 from __future__ import annotations
 
 from dataclasses import dataclass
-from itertools import starmap
 from typing import TYPE_CHECKING, Any
 
 import numpy as np
@@ -55,7 +54,7 @@ class Solenoid:
             strength=lambda z: b_z * np.sin(np.pi * z / length) ** 2,
         )
 
-    def simulate_trajectory(
+    def simulate_angle_trajectory(
         self,
         initial_state: ParticleState,
         n_steps: int = 100,
@@ -65,25 +64,48 @@ class Solenoid:
 
         gyromagnetic_ratio = 2.04e8  # gyromagnetic ratio (rad s^-1 T^-1)
 
-        def _ds_dx(
-            z: float,
-            spin: tuple[float, float, float],
+        def _dangles_dx(
+            z: float, angles: tuple[float, float]
         ) -> NDArray[np.floating[Any]]:
+            theta, phi = angles
+            # Reconstruct spin vector from angles (unit vector)
+            s_vec = np.array(
+                [
+                    np.sin(theta) * np.cos(phi),
+                    np.sin(theta) * np.sin(phi),
+                    np.cos(theta),
+                ]
+            )
             field = _get_field(z, initial_state.displacement, self)
             velocity = initial_state.parallel_velocity
 
-            return (gyromagnetic_ratio / velocity) * np.cross(spin, field)
+            dsdx = (gyromagnetic_ratio / velocity) * np.cross(s_vec, field)
+            s = np.linalg.norm(s_vec)
+            # Chain rule for θ and φ
+            dtheta = (dsdx[2] * s - s_vec[2] * np.dot(s_vec, dsdx) / s) / (
+                s**2 * np.sin(theta)
+            )
+            dphi = (s_vec[0] * dsdx[1] - s_vec[1] * dsdx[0]) / (
+                s**2 * np.sin(theta) ** 2
+            )
+            return np.array([dtheta, dphi])
+
+        # Convert initial spin to angles
+        s0 = initial_state.spin.cartesian
+        theta0 = np.arccos(s0[2] / np.linalg.norm(s0))
+        phi0 = np.arctan2(s0[1], s0[0])
+        y0 = np.array([theta0, phi0])
 
         sol = solve_ivp(  # type: ignore[return-value]
-            fun=_ds_dx,
+            fun=_dangles_dx,
             t_span=(z_points[0], z_points[-1]),
-            y0=initial_state.spin.cartesian,
+            y0=y0,
             t_eval=z_points,
             vectorized=False,
             rtol=1e-8,
         )
         spins = CoherentSpinList.from_spins(
-            list(starmap(CoherentSpin.from_cartesian, sol.y.T))  # type: ignore[return-value]
+            [CoherentSpin(theta=ang[0], phi=ang[1]) for ang in sol.y.T]  # type: ignore[return-value]
         )
         return SolenoidTrajectory(
             trajectory=Trajectory(
@@ -94,7 +116,7 @@ class Solenoid:
             positions=z_points,
         )
 
-    def simulate_trajectories(
+    def simulate_angle_trajectories(
         self,
         initial_states: list[ParticleState],
         n_steps: int = 100,
@@ -104,7 +126,7 @@ class Solenoid:
         return SolenoidSimulationResult(
             trajectories=TrajectoryList.from_trajectories(
                 [
-                    self.simulate_trajectory(state, n_steps).trajectory
+                    self.simulate_angle_trajectory(state, n_steps).trajectory
                     for state in initial_states
                 ]
             ),
