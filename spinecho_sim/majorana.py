@@ -96,7 +96,7 @@ def _stars_to_polynomial(
 def _polynomial_to_state(a: NDArray[np.complexfloating]) -> NDArray[np.complexfloating]:
     """Convert a polynomial representation to quantum state coefficients."""
     j = (len(a) - 1) / 2
-    c: NDArray[np.complexfloating] = np.empty(len(a), dtype=np.complex128)
+    c = np.empty(len(a), dtype=np.complex128)
 
     two_j = int(2 * j)
 
