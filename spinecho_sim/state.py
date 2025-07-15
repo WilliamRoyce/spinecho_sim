@@ -9,7 +9,13 @@ import numpy as np
 
 @dataclass(kw_only=True, frozen=True)
 class ParticleDisplacement:
-    """Represents the displacement of a particle in the simulation."""
+    """Represents the displacement of a particle in the simulation.
+
+    This defines the displacement in the x-y plane, perpendicular to the particle's velocity.
+    The displacement is stored in polar coordinates (r, theta), where:
+    - r is the radial distance from the origin (0, 0) in the x-y plane.
+    - theta is the angle from the positive x-axis in the x-y plane.
+    """
 
     r: float
     theta: float
@@ -94,7 +100,20 @@ class ParticleDisplacementList(Sequence[ParticleDisplacement]):
 
 @dataclass(kw_only=True, frozen=True)
 class CoherentSpin:
-    """A vector representing the spin of a spin 1/2 particle."""
+    r"""A vector representing the spin of a particle in a classical coherent state.
+
+    Spin in a classical coherent state can be treated as a vector on the unit sphere.
+    The theta and phi angles are defined in spherical coordinates, where theta is the polar angle
+    (angle from the positive z-axis) and phi is the azimuthal angle
+    (angle in the x-y plane from the positive x-axis).
+
+    Classical coherent states are often used to model the behavior of spins in magnetic fields,
+    as the dynamics of a coherent spin state can be described by the Larmor precession formula
+    in the presence of a magnetic field.
+
+    ... math::
+        \frac{d\\mathbf{S}}{dt} = \\gamma \\mathbf{S} \times \\mathbf{B}
+    """
 
     theta: float
     phi: float
@@ -129,7 +148,7 @@ class CoherentSpin:
 
 @dataclass(kw_only=True, frozen=True)
 class CoherentSpinList(Sequence[CoherentSpin]):
-    """A list of coherent spins."""
+    """A sequence of `CoherentSpin` states."""
 
     theta: np.ndarray[Any, np.dtype[np.floating]]
     phi: np.ndarray[Any, np.dtype[np.floating]]
@@ -340,13 +359,7 @@ class TrajectoryList(Sequence[Trajectory]):
 
 
 def sample_uniform_spin(n: int) -> list[CoherentSpin]:
-    """Sample N uniform random directions on the unit sphere.
-
-    Returns
-    -------
-    NDArray[np.floating[Any]]
-        An array of shape (N, 3) containing unit vectors.
-    """
+    """Sample N uniform random directions on the unit sphere."""
     rng = np.random.default_rng()
     phi = rng.uniform(0, 2 * np.pi, size=n)
     theta = rng.uniform(0, np.pi, size=n)
@@ -354,13 +367,7 @@ def sample_uniform_spin(n: int) -> list[CoherentSpin]:
 
 
 def sample_s_unit_circle(n: int) -> list[CoherentSpin]:
-    """Sample N uniform random directions on the unit circle normal to z-axis.
-
-    Returns
-    -------
-    NDArray[np.floating[Any]]
-        An array of shape (N, 3) containing unit vectors.
-    """
+    """Sample N uniform random directions on the unit circle normal to z-axis."""
     rng = np.random.default_rng()
     phi = rng.uniform(0, 2 * np.pi, size=n)
     return [CoherentSpin(theta=np.pi / 2, phi=p) for p in phi]
