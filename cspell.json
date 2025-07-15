@@ -23,7 +23,8 @@
         "scipy",
         "mathbf",
         "pycache",
-        "venv"
+        "venv",
+        "vdot"
     ],
     "userWords": [
         "Larmor"
