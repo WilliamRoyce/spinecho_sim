@@ -17,11 +17,10 @@ from spinecho_sim.state import (
     Trajectory,
     TrajectoryList,
 )
+from spinecho_sim.util import timed
 
 if TYPE_CHECKING:
     from collections.abc import Callable
-
-    from numpy.typing import NDArray
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -54,7 +53,7 @@ class Solenoid:
             strength=lambda z: b_z * np.sin(np.pi * z / length) ** 2,
         )
 
-    def simulate_angle_trajectory(
+    def simulate_trajectory(
         self,
         initial_state: ParticleState,
         n_steps: int = 100,
@@ -63,41 +62,26 @@ class Solenoid:
         z_points = np.linspace(0, self.length, n_steps + 1, endpoint=True)
 
         gyromagnetic_ratio = -2.04e8  # gyromagnetic ratio for 3He (rad s^-1 T^-1)
+        effective_ratio = gyromagnetic_ratio / initial_state.parallel_velocity
 
-        def _dangles_dx(
+        def _d_angles_dx(
             z: float, angles: tuple[float, float]
-        ) -> NDArray[np.floating[Any]]:
+        ) -> np.ndarray[Any, np.dtype[np.floating[Any]]]:
             theta, phi = angles
-            # Reconstruct spin vector from angles (unit vector)
-            s_vec = np.array(
-                [
-                    np.sin(theta) * np.cos(phi),
-                    np.sin(theta) * np.sin(phi),
-                    np.cos(theta),
-                ]
-            )
+            # TODO: can we find B_phi and B_theta analytically to make this faster?  # noqa: FIX002
             field = _get_field(z, initial_state.displacement, self)
-            velocity = initial_state.parallel_velocity
 
-            dsdx = (gyromagnetic_ratio / velocity) * np.cross(s_vec, field)
-            s = np.linalg.norm(s_vec)
-            # Chain rule for θ and φ
-            dtheta = (dsdx[2] * s - s_vec[2] * np.dot(s_vec, dsdx) / s) / (
-                s**2 * np.sin(theta)
-            )
-            dphi = (s_vec[0] * dsdx[1] - s_vec[1] * dsdx[0]) / (
-                s**2 * np.sin(theta) ** 2
-            )
-            return np.array([dtheta, dphi])
+            # d_theta / dt = B_x sin phi - B_y cos phi
+            d_theta = field[0] * np.sin(phi) - field[1] * np.cos(phi)
+            # d_phi / dt = tan theta * (B_x cos phi + B_y sin phi) - B_z
+            d_phi_xy = (field[0] * np.cos(phi) + field[1] * np.sin(phi)) / np.tan(theta)
+            d_phi = d_phi_xy - field[2]
+            return effective_ratio * np.array([d_theta, d_phi])
 
-        # Convert initial spin to angles
-        s0 = initial_state.spin.cartesian
-        theta0 = np.arccos(s0[2] / np.linalg.norm(s0))
-        phi0 = np.arctan2(s0[1], s0[0])
-        y0 = np.array([theta0, phi0])
+        y0 = np.array([initial_state.spin.theta, initial_state.spin.phi])
 
         sol = solve_ivp(  # type: ignore[return-value]
-            fun=_dangles_dx,
+            fun=_d_angles_dx,
             t_span=(z_points[0], z_points[-1]),
             y0=y0,
             t_eval=z_points,
@@ -116,7 +100,8 @@ class Solenoid:
             positions=z_points,
         )
 
-    def simulate_angle_trajectories(
+    @timed
+    def simulate_trajectories(
         self,
         initial_states: list[ParticleState],
         n_steps: int = 100,
@@ -126,7 +111,7 @@ class Solenoid:
         return SolenoidSimulationResult(
             trajectories=TrajectoryList.from_trajectories(
                 [
-                    self.simulate_angle_trajectory(state, n_steps).trajectory
+                    self.simulate_trajectory(state, n_steps).trajectory
                     for state in initial_states
                 ]
             ),
@@ -175,7 +160,7 @@ def _get_field(
     displacement: ParticleDisplacement,
     solenoid: Solenoid,
     dz: float = 1e-5,
-) -> NDArray[np.floating[Any]]:
+) -> np.ndarray[Any, np.dtype[np.floating[Any]]]:
     if displacement.r == 0:
         return solenoid.field(z)
 
