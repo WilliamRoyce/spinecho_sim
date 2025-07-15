@@ -36,7 +36,9 @@ def plot_spin_component(
     color = average_line.get_color()
     ax.plot(positions, spins.T, alpha=0.1, color=color)
 
-    std_spins = np.std(spins, axis=0)
+    std_spins = np.std(spins, axis=0) / np.sqrt(
+        len(spins)
+    )  # Standard error of the mean
     ax.fill_between(
         positions,
         np.clip(average_spins - std_spins, -1, 1),
@@ -100,7 +102,7 @@ def plot_spin_phi(
     average_line.set_label(r"$\langle \phi \rangle$")
 
     ax.plot(positions, (phi.T), alpha=0.1, color=color)
-    std_spins = np.std(phi, axis=0)
+    std_spins = np.std(phi, axis=0) / np.sqrt(len(phi))  # Standard error of the mean
     ax.fill_between(
         positions,
         (average_phi - std_spins),
@@ -128,7 +130,9 @@ def plot_spin_theta(
     average_line.set_label(r"$\langle \theta \rangle$")
 
     ax.plot(positions, theta.T, alpha=0.1, color=color)
-    std_spins = np.std(theta, axis=0)
+    std_spins = np.std(theta, axis=0) / np.sqrt(
+        len(theta)
+    )  # Standard error of the mean
     ax.fill_between(
         positions,
         (average_theta - std_spins),
