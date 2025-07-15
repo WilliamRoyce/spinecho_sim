@@ -35,13 +35,13 @@ if __name__ == "__main__":
     solenoid = Solenoid.from_experimental_parameters(
         length=0.75,
         magnetic_constant=3.96e-3,
-        current=0.01,
+        current=0.1,
     )
     result = solenoid.simulate_trajectories(initial_states, n_steps=1000)
 
     fig, ax = plot_spin_components(result)
     ax.set_title(
-        r"Classical Larmor Precession in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$, "
+        r"Classical Larmor Precession of ${}^3$He in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$, "
         f"{num_spins} spins"
     )
     ax.legend(loc="lower right", fontsize="small")
@@ -51,7 +51,7 @@ if __name__ == "__main__":
 
     fig, ax = plot_spin_angles(result)
     ax.set_title(
-        r"Classical Larmor Precession in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$, "
+        r"Classical Larmor Precession of ${}^3$He in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$, "
         f"{num_spins} spins"
     )
     ax.legend(loc="lower right", fontsize="small")
