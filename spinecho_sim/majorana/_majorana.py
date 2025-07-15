@@ -1,3 +1,5 @@
+"""Provide functions to convert between Majorana stars and quantum state coefficients."""
+
 from __future__ import annotations
 
 from math import comb
@@ -34,7 +36,7 @@ def _get_majorana_coefficients_from_spin(
     return stars
 
 
-def get_majorana_coefficients_from_spin_multiple(
+def majorana_stars(
     spin_coefficients: np.ndarray[Any, np.dtype[np.complexfloating]], z_tol: float = 1e8
 ) -> np.ndarray[Any, np.dtype[np.float64]]:
     """Compute Majorana points for multiple sets of spin coefficients."""
