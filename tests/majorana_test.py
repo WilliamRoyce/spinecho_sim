@@ -1,41 +1,37 @@
 from __future__ import annotations
 
-from typing import TYPE_CHECKING
-
 import numpy as np
 
-if TYPE_CHECKING:
-    from numpy.typing import NDArray
 from spinecho_sim.majorana import (
-    majorana_points_by_index,
+    get_majorana_coefficients_from_spin_multiple,
     stars_to_states,
 )
 
 
 def test_spin_states_roundtrip() -> None:
-    # TODO: dtype not needed here
     spin_states = np.array(
         [
             [(1.0 + 0.0j) / np.sqrt(2), (0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
             [(0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
         ],
-        dtype=np.complex128,
     )
     # Convert to Majorana points
-    majorana_points = majorana_points_by_index(spin_states)
+    majorana_points = get_majorana_coefficients_from_spin_multiple(spin_states)
     # Convert back to states
     recovered_states = stars_to_states(majorana_points)
     # Check if recovered states match original (up to global phase)
-    # TODO: recovered is a more appropriate name than rec
-    for orig, rec in zip(spin_states, recovered_states, strict=False):
-        # TODO: fix annotations
+    for original, recovered in zip(spin_states, recovered_states, strict=False):
         # Normalize both
-        orig_norm: NDArray[np.complexfloating] = orig / np.linalg.norm(orig)
-        rec_norm: NDArray[np.complexfloating] = rec / np.linalg.norm(rec)
+        original_norm = original / np.linalg.norm(original)
+        recovered_norm = recovered / np.linalg.norm(recovered)
         # Remove global phase
-        phase: np.complex128 = np.exp(-1j * np.angle(np.vdot(orig_norm, rec_norm)))
-        rec_norm *= phase
-        # TODO: np.testing.assert_allclose is more appropriate
-        assert np.allclose(orig_norm, rec_norm, atol=1e-8), (
-            f"Roundtrip failed: {orig_norm} vs {rec_norm}"
+        phase: np.complex128 = np.exp(
+            -1j * np.angle(np.vdot(original_norm, recovered_norm))
+        )
+        recovered_norm *= phase
+        np.testing.assert_allclose(
+            original_norm,
+            recovered_norm,
+            atol=1e-8,
+            err_msg=f"Round-trip failed: {original_norm} vs {recovered_norm}",
         )
