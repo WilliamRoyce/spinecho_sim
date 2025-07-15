@@ -13,6 +13,7 @@ from spinecho_sim.majorana import (
 
 
 def test_spin_states_roundtrip() -> None:
+    # TODO: dtype not needed here
     spin_states = np.array(
         [
             [(1.0 + 0.0j) / np.sqrt(2), (0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
@@ -25,13 +26,16 @@ def test_spin_states_roundtrip() -> None:
     # Convert back to states
     recovered_states = stars_to_states(majorana_points)
     # Check if recovered states match original (up to global phase)
+    # TODO: recovered is a more appropriate name than rec
     for orig, rec in zip(spin_states, recovered_states, strict=False):
+        # TODO: fix annotations
         # Normalize both
         orig_norm: NDArray[np.complexfloating] = orig / np.linalg.norm(orig)
         rec_norm: NDArray[np.complexfloating] = rec / np.linalg.norm(rec)
         # Remove global phase
         phase: np.complex128 = np.exp(-1j * np.angle(np.vdot(orig_norm, rec_norm)))
         rec_norm *= phase
+        # TODO: np.testing.assert_allclose is more appropriate
         assert np.allclose(orig_norm, rec_norm, atol=1e-8), (
             f"Roundtrip failed: {orig_norm} vs {rec_norm}"
         )
