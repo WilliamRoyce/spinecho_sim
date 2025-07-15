@@ -4,7 +4,7 @@ from itertools import starmap
 from typing import Any
 
 import numpy as np
-from scipy.integrate import solve_ivp
+from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
 
 from spinecho_sim.solenoid import Solenoid, SolenoidTrajectory
 from spinecho_sim.state import (
