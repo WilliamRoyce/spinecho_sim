@@ -36,7 +36,7 @@ def _get_majorana_coefficients_from_spin(
     return stars
 
 
-def majorana_stars(
+def majorana_stars_old(
     spin_coefficients: np.ndarray[Any, np.dtype[np.complexfloating]], z_tol: float = 1e8
 ) -> np.ndarray[Any, np.dtype[np.float64]]:
     """Compute Majorana points for multiple sets of spin coefficients."""
