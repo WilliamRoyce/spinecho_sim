@@ -22,7 +22,7 @@ def _majorana_precompute(
     return w, c_template
 
 
-def majorana_stars_new(
+def majorana_stars(
     spin_coefficients: np.ndarray[Any, np.dtype[np.complex128]], z_tol: float = 1e8
 ) -> np.ndarray[Any, np.dtype[np.float64]]:
     """Compute Majorana points for multiple sets of spin coefficients."""
@@ -97,4 +97,11 @@ if __name__ == "__main__":
             [(0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
         ],
     )
-    print(majorana_stars_new(spin_states))
+    print(majorana_stars(spin_states))
+    spin_states = np.array(
+        [
+            [(1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
+            [(0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
+        ],
+    )
+    print(majorana_stars(spin_states))
