@@ -5,8 +5,9 @@ from typing import Any, override
 
 import numpy as np
 
-from spinecho_sim.majorana import stars_to_state
-from spinecho_sim.majorana._companion_helper import majorana_stars
+from spinecho_sim.majorana import majorana_stars, stars_to_state
+
+NUM_SPIN_PARAMS = 2  # Number of parameters per spin (theta, phi)
 
 
 class Spin(Sequence[Any]):
@@ -14,7 +15,9 @@ class Spin(Sequence[Any]):
 
     def __init__(self, spins: np.ndarray[Any, np.dtype[np.float64]]) -> None:
         self._spins = spins
-        assert self._spins.shape[-1] == 2  # Ensure last dimension is 2 (for theta, phi)
+        assert (
+            self._spins.shape[-1] == NUM_SPIN_PARAMS
+        )  # Ensure last dimension is 2 (for theta, phi)
 
     @override
     def __len__(self) -> int:
@@ -37,7 +40,7 @@ class Spin(Sequence[Any]):
         # For slice, return a new Spin with the sliced flat array
         sliced = flat[index]
         # Reshape to (1, n_spins, 2) for consistency
-        return Spin(sliced.reshape(1, -1, 2))
+        return Spin(sliced.reshape(1, -1, NUM_SPIN_PARAMS))
 
     def group(self, index: int) -> Spin:
         """Return the spins in a specific group."""
@@ -129,35 +132,3 @@ class CoherentSpin(Spin):
     def phi(self) -> float:
         """Return the phi angle of the spin."""
         return self._phi
-
-
-group1 = [CoherentSpin(theta=0.5, phi=1.0), CoherentSpin(theta=1.0, phi=2.0)]
-group2 = [CoherentSpin(theta=0.2, phi=0.3), CoherentSpin(theta=1.0, phi=2.0)]
-spin_collection = Spin.from_list([group1, group2])
-
-for s in spin_collection.flat_iter():
-    print(f"Theta: {s.theta}, Phi: {s.phi}")
-print("\n")
-
-spin_states = np.array(
-    [
-        [(1.0 + 0.0j) / np.sqrt(2), (0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
-        [(0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
-    ],
-)
-
-spin_from_state = Spin.from_momentum_state(spin_states)
-for s in spin_from_state.flat_iter():
-    print(f"Theta: {s.theta}, Phi: {s.phi}")
-for s in spin_from_state.group(1).flat_iter():
-    print(f"Theta: {s.theta}, Phi: {s.phi}")
-
-
-spin_state = np.array(
-    [(1.0 + 0.0j) / np.sqrt(2), (0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
-    dtype=np.complex128,
-)
-
-coherent_spin = Spin.from_momentum_state(spin_state)
-print(f"\nTheta: {coherent_spin.item(0).theta}, Phi: {coherent_spin.item(0).phi}")
-print(f"Theta: {coherent_spin.item(1).theta}, Phi: {coherent_spin.item(1).phi}")
