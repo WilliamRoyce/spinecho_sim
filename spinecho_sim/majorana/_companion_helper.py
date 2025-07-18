@@ -86,22 +86,3 @@ def _majorana_roots(
                 )
         roots_array[idx, :] = roots
     return roots_array
-
-
-if __name__ == "__main__":
-    spin_states = np.array(
-        [
-            [(1.0 + 0.0j) / np.sqrt(2), (0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
-            [(0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
-            [(1.0 + 0.0j) / np.sqrt(2), (0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
-            [(0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
-        ],
-    )
-    print(majorana_stars(spin_states))
-    spin_states = np.array(
-        [
-            [(1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
-            [(0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
-        ],
-    )
-    print(majorana_stars(spin_states))
