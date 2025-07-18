@@ -155,17 +155,24 @@ class CoherentSpin(Spin):
         )
 
 
-@dataclass(kw_only=True, frozen=True)
 class SpinList(Sequence[Spin]):
     """A class representing a list of Spin objects."""
-
-    _majorana_theta: np.ndarray[tuple[int, int], np.dtype[np.float64]]
-    _majorana_phi: np.ndarray[tuple[int, int], np.dtype[np.float64]]
-
-    def __post_init__(self) -> None:
+    
+    def __init__(
+        self,
+        _majorana_theta: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+        _majorana_phi: np.ndarray[tuple[int, int], np.dtype[np.float64]],
+    ) -> None:
+        """Initialize the SpinList with theta and phi arrays."""
+        self._majorana_theta = _majorana_theta
+        self._majorana_phi = _majorana_phi
         if self._majorana_theta.shape != self._majorana_phi.shape:
             msg = "Theta and phi arrays must have the same shape."
             raise ValueError(msg)
+
+    _majorana_theta: np.ndarray[tuple[int, int], np.dtype[np.float64]]
+    _majorana_phi: np.ndarray[tuple[int, int], np.dtype[np.float64]]
+        
 
     @staticmethod
     def from_spins(spins: Iterable[Spin]) -> SpinList:
@@ -240,21 +247,24 @@ class SpinList(Sequence[Spin]):
         ]
 
 
-@dataclass(kw_only=True, frozen=True)
-class CoherentSpinList(Sequence[CoherentSpin]):
+class CoherentSpinList(SpinList):
     """A class representing a list of CoherentSpin objects."""
 
-    theta: np.ndarray[tuple[int, int], np.dtype[np.float64]]
-    phi: np.ndarray[tuple[int, int], np.dtype[np.float64]]
-    n_stars: np.ndarray[tuple[int], np.dtype[np.int_]]
-
-    def __post_init__(self) -> None:
-        if self.theta.shape != self.phi.shape:
+    def __init__(self, theta, phi, n_stars:):
+        self._theta = theta
+        self._phi = phi
+        self.n_stars = n_stars
+        
+        if self._theta.shape != self._phi.shape:
             msg = "Theta and phi arrays must have the same shape."
             raise ValueError(msg)
-        if self.theta.shape[0] != self.n_stars.shape[0]:
+        if self._theta.shape[0] != self.n_stars.shape[0]:
             msg = "Theta and phi arrays must have the same number of spins as n_stars."
             raise ValueError(msg)
+
+    _theta: np.ndarray[tuple[int, int], np.dtype[np.float64]]
+    _phi: np.ndarray[tuple[int, int], np.dtype[np.float64]]
+    _n_stars: np.ndarray[tuple[int], np.dtype[np.int_]]
 
     @staticmethod
     def from_coherent_spins(spins: Iterable[CoherentSpin]) -> CoherentSpinList:
@@ -262,12 +272,12 @@ class CoherentSpinList(Sequence[CoherentSpin]):
         theta = np.array([spin.theta for spin in spins], dtype=np.float64)
         phi = np.array([spin.phi for spin in spins], dtype=np.float64)
         n_stars = np.array([spin.n_stars for spin in spins], dtype=np.int_)
-        return CoherentSpinList(theta=theta, phi=phi, n_stars=n_stars)
+        return CoherentSpinList(theta=_theta, phi=_phi, n_stars=_n_stars)
 
     @override
     def __len__(self) -> int:
         """Get the number of coherent spins in the list."""
-        return self.theta.shape[0]
+        return self._theta.shape[0]
 
     @overload
     def __getitem__(self, index: int) -> CoherentSpin: ...
@@ -279,9 +289,9 @@ class CoherentSpinList(Sequence[CoherentSpin]):
     def __getitem__(self, index: int | slice) -> CoherentSpin | CoherentSpinList:
         if isinstance(index, slice):
             return CoherentSpinList(
-                theta=self.theta[index],
-                phi=self.phi[index],
-                n_stars=self.n_stars[index],
+                _theta=self._theta[index],
+                _phi=self._phi[index],
+                _n_stars=self._n_stars[index],
             )
         return CoherentSpin(
             theta=self.theta.item(index),
