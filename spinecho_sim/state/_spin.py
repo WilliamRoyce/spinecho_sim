@@ -146,7 +146,7 @@ class CoherentSpin(Spin[tuple[()]]):
         """Return the shape of a single coherent spin."""
         return ()
 
-    def as_generic(self) -> Spin[tuple[int]]:
+    def as_generic(self) -> GenericSpin:
         """Return a generic Spin representation of this coherent spin."""
         return Spin.from_iter([self])
 
