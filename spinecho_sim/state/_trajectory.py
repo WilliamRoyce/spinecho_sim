@@ -10,22 +10,22 @@ from spinecho_sim.state._displacement import (
     ParticleDisplacement,
     ParticleDisplacementList,
 )
-from spinecho_sim.state._spin import CoherentSpin, Spin
+from spinecho_sim.state._spin import Spin
 from spinecho_sim.state._state import ParticleState
 
 
 @dataclass(kw_only=True, frozen=True)
-class Trajectory(Sequence[ParticleState]):
+class Trajectory[S: tuple[int, ...] = tuple[int, ...]](Sequence[Any]):
     """A trajectory of a particle through the simulation."""
 
-    spins: Spin
+    spins: Spin[tuple[*S, int]]
     displacement: ParticleDisplacement
     parallel_velocity: float
 
     @staticmethod
     def from_states(
         states: Iterable[ParticleState],
-    ) -> Trajectory:
+    ) -> Trajectory[tuple[int]]:
         """Create a Trajectory from a list of ParticleStates."""
         states = list(states)
         velocities = np.array([state.parallel_velocity for state in states])
@@ -36,8 +36,9 @@ class Trajectory(Sequence[ParticleState]):
         assert all(d == displacements[0] for d in displacements), (
             "All states must have the same displacement."
         )
-        return Trajectory(
-            spins=Spin.from_list([[s.spin for s in states]]),
+
+        return Trajectory[tuple[int]](
+            spins=Spin.from_iter(s.spin for s in states),
             displacement=displacements[0],
             parallel_velocity=velocities[0],
         )
@@ -47,31 +48,38 @@ class Trajectory(Sequence[ParticleState]):
         return self.spins.shape[0]
 
     @overload
-    def __getitem__(self, index: int) -> ParticleState: ...
+    def __getitem__(self: Trajectory[tuple[int]], index: int) -> ParticleState: ...
 
     @overload
-    def __getitem__(self, index: slice) -> Trajectory: ...
+    def __getitem__(self, index: slice | int) -> Trajectory: ...
 
     @override
     def __getitem__(self, index: int | slice) -> ParticleState | Trajectory:
+        if isinstance(index, int) and self.spins.ndim == 2:  # noqa: PLR2004
+            return ParticleState(
+                spin=self.spins[index],
+                displacement=self.displacement,
+                parallel_velocity=self.parallel_velocity,
+            )
         if isinstance(index, slice):
-            return Trajectory(
+            return Trajectory[tuple[int, ...]](
                 spins=self.spins[index],
                 displacement=self.displacement,
                 parallel_velocity=self.parallel_velocity,
             )
-        return ParticleState(
-            spin=self.spins[index],
+
+        return Trajectory(
+            spins=self.spins[index],
             displacement=self.displacement,
             parallel_velocity=self.parallel_velocity,
         )
 
 
 @dataclass(kw_only=True, frozen=True)
-class TrajectoryList(Sequence[Trajectory]):
+class TrajectoryList(Sequence[Trajectory[tuple[int]]]):
     """A list of trajectories."""
 
-    spins: Spin
+    spins: Spin[tuple[int, int, int]]
     displacements: ParticleDisplacementList
     parallel_velocities: np.ndarray[Any, np.dtype[np.floating]]
 
@@ -87,14 +95,11 @@ class TrajectoryList(Sequence[Trajectory]):
 
     @staticmethod
     def from_trajectories(
-        trajectories: Iterable[Trajectory],
+        trajectories: Iterable[Trajectory[tuple[int]]],
     ) -> TrajectoryList:
         """Create a TrajectoryList from a list of Trajectories."""
         trajectories = list(trajectories)
-        spins = Spin(
-            theta=np.array([t.spins.theta for t in trajectories]),
-            phi=np.array([t.spins.phi for t in trajectories]),
-        )
+        spins = Spin.from_iter(t.spins for t in trajectories)
         displacements = ParticleDisplacementList.from_displacements(
             t.displacement for t in trajectories
         )
@@ -110,34 +115,31 @@ class TrajectoryList(Sequence[Trajectory]):
         return len(self.parallel_velocities)
 
     @overload
-    def __getitem__(self, index: int) -> Trajectory: ...
+    def __getitem__(self, index: int) -> Trajectory[tuple[int]]: ...
     @overload
     def __getitem__(self, index: slice) -> TrajectoryList: ...
 
     @override
-    def __getitem__(self, index: int | slice) -> Trajectory | TrajectoryList:
+    def __getitem__(
+        self, index: int | slice
+    ) -> Trajectory[tuple[int]] | TrajectoryList:
         if isinstance(index, slice):
             return TrajectoryList(
                 spins=self.spins[index],
                 displacements=self.displacements[index],
                 parallel_velocities=self.parallel_velocities[index],
             )
-        return Trajectory(
-            spins=Spin(
-                theta=self.spins.theta[index],
-                phi=self.spins.phi[index],
-            ),
+        return Trajectory[tuple[int]](
+            spins=self.spins[index],
             displacement=self.displacements[index],
             parallel_velocity=self.parallel_velocities[index],
         )
 
     @override
-    def __iter__(self) -> Iterator[Trajectory]:
+    def __iter__(self) -> Iterator[Trajectory[tuple[int]]]:
         for i in range(len(self)):
-            yield Trajectory(
-                spins=Spin.from_list(
-                    [[CoherentSpin(theta=self.spins.theta[i], phi=self.spins.phi[i])]]
-                ),
+            yield Trajectory[tuple[int]](
+                spins=self.spins[i],
                 displacement=self.displacements[i],
                 parallel_velocity=self.parallel_velocities[i],
             )
