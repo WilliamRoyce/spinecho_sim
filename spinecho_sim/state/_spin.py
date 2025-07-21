@@ -1,13 +1,11 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Sequence
-from typing import Any, TypeVarTuple, overload, override
+from typing import Any, overload, override
 
 import numpy as np
 
 from spinecho_sim.majorana import majorana_stars, stars_to_state
-
-S = TypeVarTuple("S")
 
 
 class Spin[S: tuple[int, ...]](Sequence[Any]):
