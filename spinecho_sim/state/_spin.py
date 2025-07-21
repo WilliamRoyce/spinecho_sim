@@ -5,7 +5,8 @@ from typing import Any, overload, override
 
 import numpy as np
 
-from spinecho_sim.majorana import majorana_stars, stars_to_state
+from spinecho_sim.state._companion_helper import majorana_stars
+from spinecho_sim.state._majorana_representation import stars_to_state
 
 
 class Spin[S: tuple[int, ...]](Sequence[Any]):
@@ -149,6 +150,26 @@ class CoherentSpin(Spin[tuple[()]]):
     def as_generic(self) -> GenericSpin:
         """Return a generic Spin representation of this coherent spin."""
         return Spin.from_iter([self])
+
+    @property
+    def x(self) -> np.ndarray[tuple[()], np.dtype[np.floating]]:
+        """Get the x-component of the spin vector."""
+        return np.sin(self.theta) * np.cos(self.phi)
+
+    @property
+    def y(self) -> np.ndarray[tuple[()], np.dtype[np.floating]]:
+        """Get the y-component of the spin vector."""
+        return np.sin(self.theta) * np.sin(self.phi)
+
+    @property
+    def z(self) -> np.ndarray[tuple[()], np.dtype[np.floating]]:
+        """Get the z-component of the spin vector."""
+        return np.cos(self.theta)
+
+    @property
+    def cartesian(self) -> np.ndarray[Any, np.dtype[np.floating]]:
+        """Get the Cartesian coordinates of the spin vector."""
+        return np.array([self.x, self.y, self.z], dtype=np.float64)
 
 
 type GenericSpin = Spin[tuple[int]]
