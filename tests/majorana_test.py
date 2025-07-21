@@ -2,9 +2,9 @@ from __future__ import annotations
 
 import numpy as np
 
-from spinecho_sim.majorana import (
+from spinecho_sim.state._majorana import (
     majorana_stars,
-    stars_to_states,
+    stars_to_state,
 )
 
 
@@ -18,7 +18,7 @@ def test_spin_states_roundtrip() -> None:
     # Convert to Majorana points
     majorana_points = majorana_stars(spin_states)
     # Convert back to states
-    recovered_states = stars_to_states(majorana_points)
+    recovered_states = stars_to_state(majorana_points)
     # Check if recovered states match original (up to global phase)
     for original, recovered in zip(spin_states, recovered_states, strict=False):
         # Normalize both

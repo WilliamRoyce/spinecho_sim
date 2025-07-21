@@ -17,3 +17,25 @@ class ParticleState:
     spin: GenericSpin
     displacement: ParticleDisplacement
     parallel_velocity: np.float64
+
+    def as_coherent(self) -> list[CoherentParticleState]:
+        """Convert to a CoherentParticleState."""
+        return [
+            CoherentParticleState(
+                spin=s.as_generic(),
+                displacement=self.displacement,
+                parallel_velocity=self.parallel_velocity,
+            )
+            for s in self.spin.flat_iter()
+        ]
+
+
+@dataclass(kw_only=True, frozen=True)
+class CoherentParticleState(ParticleState):
+    """Represents the state of a coherent particle in the simulation."""
+
+    def __post_init__(self) -> None:
+        """Ensure that the spin is a CoherentSpin."""
+        assert self.spin.size == 1, (
+            "CoherentParticleState must represent a single coherent spin."
+        )

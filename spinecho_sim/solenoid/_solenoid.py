@@ -10,7 +10,6 @@ from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
 from tqdm import tqdm
 
 from spinecho_sim.state import (
-    CoherentSpin,
     ParticleDisplacement,
     ParticleDisplacementList,
     ParticleState,
@@ -22,6 +21,8 @@ from spinecho_sim.util import timed
 
 if TYPE_CHECKING:
     from collections.abc import Callable
+
+    from spinecho_sim.state._state import CoherentParticleState
 
 
 @dataclass(kw_only=True, frozen=True)
@@ -54,12 +55,14 @@ class Solenoid:
             strength=lambda z: b_z * np.sin(np.pi * z / length) ** 2,
         )
 
-    def simulate_trajectory(
+    def _simulate_coherent_trajectory(
         self,
-        initial_state: ParticleState,
+        initial_state: CoherentParticleState,
         n_steps: int = 100,
-    ) -> SolenoidTrajectory[tuple[int]]:
-        """Run the spin echo simulation using configured parameters."""
+    ) -> tuple[
+        np.ndarray[Any, np.dtype[np.floating]],
+        np.ndarray[Any, np.dtype[np.floating]],
+    ]:
         z_points = np.linspace(0, self.length, n_steps + 1, endpoint=True)
 
         gyromagnetic_ratio = -2.04e8  # gyromagnetic ratio for 3He (rad s^-1 T^-1)
@@ -86,7 +89,7 @@ class Solenoid:
             d_phi = d_phi_xy - field[2]
             return effective_ratio * np.array([d_theta, d_phi])
 
-        y0 = np.array([initial_state.spin.theta, initial_state.spin.phi])
+        y0 = np.array([initial_state.spin.theta.item(), initial_state.spin.phi.item()])
 
         sol = solve_ivp(  # type: ignore[return-value]
             fun=_d_angles_dx,
@@ -96,11 +99,25 @@ class Solenoid:
             vectorized=False,
             rtol=1e-8,
         )
-        spins = Spin.from_iter(
-            [CoherentSpin(theta=ang[0], phi=ang[1]) for ang in np.array(sol.y).T]  # type: ignore[return-value]
-        )
+        return np.array(sol.y)[0], np.array(sol.y)[1]  # type: ignore[return-value]
+
+    def simulate_trajectory(
+        self,
+        initial_state: ParticleState,
+        n_steps: int = 100,
+    ) -> SolenoidTrajectory[tuple[int]]:
+        """Run the spin echo simulation using configured parameters."""
+        data = np.empty((n_steps + 1, initial_state.spin.size, 2), dtype=np.float64)
+        for i, s in enumerate(initial_state.as_coherent()):
+            thetas, phis = self._simulate_coherent_trajectory(s, n_steps)
+            data[:, i, 0] = thetas
+            data[:, i, 1] = phis
+
+        spins = Spin[tuple[int, int]](data)
+        z_points = np.linspace(0, self.length, n_steps + 1, endpoint=True)
+
         return SolenoidTrajectory(
-            trajectory=Trajectory(
+            trajectory=Trajectory[tuple[int]](
                 spins=spins,
                 displacement=initial_state.displacement,
                 parallel_velocity=initial_state.parallel_velocity,

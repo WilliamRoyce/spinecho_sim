@@ -87,8 +87,7 @@ class TrajectoryList(Sequence[Trajectory[tuple[int]]]):
 
     def __post_init__(self) -> None:
         if (
-            self.spins.shape[-1] != NUM_SPIN_PARAMS
-            or self.parallel_velocities.ndim != 1
+            self.parallel_velocities.ndim != 1
             or self.parallel_velocities.shape != self.displacements.shape
             or self.parallel_velocities.size != self.spins.shape[0]
         ):

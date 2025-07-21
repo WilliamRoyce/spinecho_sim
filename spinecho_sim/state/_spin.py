@@ -88,6 +88,26 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         """Return the total number of spins."""
         return np.prod(self.shape).item()
 
+    @property
+    def x(self) -> np.ndarray[tuple[*S], np.dtype[np.floating]]:
+        """Get the x-component of the spin vector."""
+        return np.sin(self.theta) * np.cos(self.phi)
+
+    @property
+    def y(self) -> np.ndarray[tuple[*S], np.dtype[np.floating]]:
+        """Get the y-component of the spin vector."""
+        return np.sin(self.theta) * np.sin(self.phi)
+
+    @property
+    def z(self) -> np.ndarray[tuple[*S], np.dtype[np.floating]]:
+        """Get the z-component of the spin vector."""
+        return np.cos(self.theta)
+
+    @property
+    def cartesian(self) -> np.ndarray[tuple[int, *S], np.dtype[np.floating]]:
+        """Get the Cartesian coordinates of the spin vector."""
+        return np.array([self.x, self.y, self.z], dtype=np.float64)
+
     @staticmethod
     def from_momentum_state(
         spin_coefficients: np.ndarray[Any, np.dtype[np.complex128]],
@@ -106,8 +126,12 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         spins: Iterable[Spin[S_]],
     ) -> Spin[tuple[int, *S_]]:
         """Create a Spin from a nested list of CoherentSpin objects."""
+        spins = list(spins)
         spins_array = np.array(
-            [(spin.theta, spin.phi) for spin in spins],
+            [
+                np.column_stack((spin.theta, spin.phi)).reshape(*spin.shape, 2)
+                for spin in spins
+            ],
             dtype=np.float64,
         )
         return Spin(spins_array)
@@ -151,25 +175,12 @@ class CoherentSpin(Spin[tuple[()]]):
         """Return a generic Spin representation of this coherent spin."""
         return Spin.from_iter([self])
 
-    @property
-    def x(self) -> np.ndarray[tuple[()], np.dtype[np.floating]]:
-        """Get the x-component of the spin vector."""
-        return np.sin(self.theta) * np.cos(self.phi)
-
-    @property
-    def y(self) -> np.ndarray[tuple[()], np.dtype[np.floating]]:
-        """Get the y-component of the spin vector."""
-        return np.sin(self.theta) * np.sin(self.phi)
-
-    @property
-    def z(self) -> np.ndarray[tuple[()], np.dtype[np.floating]]:
-        """Get the z-component of the spin vector."""
-        return np.cos(self.theta)
-
-    @property
-    def cartesian(self) -> np.ndarray[Any, np.dtype[np.floating]]:
-        """Get the Cartesian coordinates of the spin vector."""
-        return np.array([self.x, self.y, self.z], dtype=np.float64)
+    @staticmethod
+    def from_cartesian(x: float, y: float, z: float) -> CoherentSpin:
+        """Create a Spin from Cartesian coordinates."""
+        r = np.sqrt(x**2 + y**2 + z**2)
+        assert np.isclose(r, 1, rtol=1e-3), f"Spin vector must be normalized. r = {r}"
+        return CoherentSpin(theta=np.arccos(z / r), phi=np.arctan2(y, x))
 
 
 type GenericSpin = Spin[tuple[int]]
