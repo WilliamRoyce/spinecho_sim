@@ -4,6 +4,8 @@ from dataclasses import dataclass
 from typing import TYPE_CHECKING
 
 if TYPE_CHECKING:
+    import numpy as np
+
     from spinecho_sim.state._displacement import ParticleDisplacement
     from spinecho_sim.state._spin import GenericSpin
 
@@ -14,4 +16,4 @@ class ParticleState:
 
     spin: GenericSpin
     displacement: ParticleDisplacement
-    parallel_velocity: float
+    parallel_velocity: np.float64

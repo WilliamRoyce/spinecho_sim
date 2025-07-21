@@ -10,16 +10,17 @@ from spinecho_sim import (
     ParticleState,
     Solenoid,
 )
-from spinecho_sim.majorana._companion_helper import (
-    majorana_stars,
-)
-from spinecho_sim.majorana._majorana_representation import (
-    stars_to_state,
-)
 from spinecho_sim.state import (
     CoherentSpin,
     ParticleDisplacement,
+    Spin,
     TrajectoryList,
+)
+from spinecho_sim.state._companion_helper import (
+    majorana_stars,
+)
+from spinecho_sim.state._majorana_representation import (
+    stars_to_state,
 )
 
 if TYPE_CHECKING:
@@ -56,7 +57,7 @@ def _make_majorana_particle_groups(
         group = grouped_stars[i]  # shape: (n_states, 2)
         group_states = [
             ParticleState(
-                spin=CoherentSpin(theta=group[j, 0], phi=group[j, 1]),
+                spin=Spin.from_iter([CoherentSpin(theta=group[j, 0], phi=group[j, 1])]),
                 displacement=displacements[j],
                 parallel_velocity=velocities[j],
             )

@@ -11,10 +11,10 @@ from tqdm import tqdm
 
 from spinecho_sim.state import (
     CoherentSpin,
-    CoherentSpinList,
     ParticleDisplacement,
     ParticleDisplacementList,
     ParticleState,
+    Spin,
     Trajectory,
     TrajectoryList,
 )
@@ -58,7 +58,7 @@ class Solenoid:
         self,
         initial_state: ParticleState,
         n_steps: int = 100,
-    ) -> SolenoidTrajectory:
+    ) -> SolenoidTrajectory[tuple[int]]:
         """Run the spin echo simulation using configured parameters."""
         z_points = np.linspace(0, self.length, n_steps + 1, endpoint=True)
 
@@ -96,7 +96,7 @@ class Solenoid:
             vectorized=False,
             rtol=1e-8,
         )
-        spins = CoherentSpinList.from_spins(
+        spins = Spin.from_iter(
             [CoherentSpin(theta=ang[0], phi=ang[1]) for ang in np.array(sol.y).T]  # type: ignore[return-value]
         )
         return SolenoidTrajectory(
@@ -128,14 +128,14 @@ class Solenoid:
 
 
 @dataclass(kw_only=True, frozen=True)
-class SolenoidTrajectory:
+class SolenoidTrajectory[S: tuple[int, ...] = tuple[int, ...]]:
     """Represents the trajectory of a particle as it moves through the simulation."""
 
-    trajectory: Trajectory
+    trajectory: Trajectory[S]
     positions: np.ndarray[Any, np.dtype[np.floating]]
 
     @property
-    def spins(self) -> CoherentSpinList:
+    def spins(self) -> Spin[tuple[*S, int]]:
         """The spin components from the simulation states."""
         return self.trajectory.spins
 
@@ -153,7 +153,7 @@ class SolenoidSimulationResult:
     positions: np.ndarray[Any, np.dtype[np.floating]]
 
     @property
-    def spins(self) -> CoherentSpinList:
+    def spins(self) -> Spin[tuple[int, int, int]]:
         """Extract the spin components from the simulation states."""
         return self.trajectories.spins
 

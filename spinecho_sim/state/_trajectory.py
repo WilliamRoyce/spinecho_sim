@@ -13,6 +13,8 @@ from spinecho_sim.state._displacement import (
 from spinecho_sim.state._spin import Spin
 from spinecho_sim.state._state import ParticleState
 
+NUM_SPIN_PARAMS = 2  # Number of parameters per spin (theta, phi)
+
 
 @dataclass(kw_only=True, frozen=True)
 class Trajectory[S: tuple[int, ...] = tuple[int, ...]](Sequence[Any]):
@@ -20,7 +22,7 @@ class Trajectory[S: tuple[int, ...] = tuple[int, ...]](Sequence[Any]):
 
     spins: Spin[tuple[*S, int]]
     displacement: ParticleDisplacement
-    parallel_velocity: float
+    parallel_velocity: np.float64
 
     @staticmethod
     def from_states(
@@ -55,14 +57,14 @@ class Trajectory[S: tuple[int, ...] = tuple[int, ...]](Sequence[Any]):
 
     @override
     def __getitem__(self, index: int | slice) -> ParticleState | Trajectory:
-        if isinstance(index, int) and self.spins.ndim == 2:  # noqa: PLR2004
+        if isinstance(index, int) and self.spins.ndim == NUM_SPIN_PARAMS:
             return ParticleState(
                 spin=self.spins[index],
                 displacement=self.displacement,
                 parallel_velocity=self.parallel_velocity,
             )
         if isinstance(index, slice):
-            return Trajectory[tuple[int, ...]](
+            return Trajectory[tuple[int]](
                 spins=self.spins[index],
                 displacement=self.displacement,
                 parallel_velocity=self.parallel_velocity,
@@ -85,7 +87,7 @@ class TrajectoryList(Sequence[Trajectory[tuple[int]]]):
 
     def __post_init__(self) -> None:
         if (
-            self.spins.theta.ndim != 2  # noqa: PLR2004
+            self.spins.shape[-1] != NUM_SPIN_PARAMS
             or self.parallel_velocities.ndim != 1
             or self.parallel_velocities.shape != self.displacements.shape
             or self.parallel_velocities.size != self.spins.shape[0]

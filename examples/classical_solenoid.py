@@ -10,6 +10,9 @@ from spinecho_sim import (
 from spinecho_sim.solenoid import plot_spin_angles, plot_spin_components
 from spinecho_sim.state import (
     CoherentSpin,
+    Spin,
+)
+from spinecho_sim.state._samples import (
     sample_gaussian_velocities,
     sample_uniform_displacement,
 )
@@ -19,7 +22,7 @@ if __name__ == "__main__":
     num_spins = 100
     initial_states = [
         ParticleState(
-            spin=CoherentSpin(theta=np.pi / 2, phi=0),
+            spin=Spin.from_iter([CoherentSpin(theta=np.pi / 2, phi=0)]),
             displacement=displacement,
             parallel_velocity=velocity,
         )
