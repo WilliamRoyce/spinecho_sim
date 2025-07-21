@@ -4,12 +4,14 @@ from typing import Any
 
 import numpy as np
 
-from spinecho_sim.state import (
-    CoherentSpin,
+from spinecho_sim.state._displacement import (
     ParticleDisplacement,
     ParticleDisplacementList,
 )
-from spinecho_sim.state._spin import Spin
+from spinecho_sim.state._spin import (
+    CoherentSpin,
+    Spin,
+)
 
 
 def sample_uniform_spin(n: int) -> Spin[tuple[int]]:

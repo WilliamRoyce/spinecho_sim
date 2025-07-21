@@ -6,7 +6,17 @@ from spinecho_sim.state._displacement import (
     ParticleDisplacement,
     ParticleDisplacementList,
 )
-from spinecho_sim.state._spin import CoherentSpin, GenericSpinList, Spin
+from spinecho_sim.state._samples import (
+    sample_gaussian_velocities,
+    sample_uniform_displacement,
+)
+from spinecho_sim.state._spin import (
+    CoherentSpin,
+    CoherentSpinList,
+    GenericSpin,
+    GenericSpinList,
+    Spin,
+)
 from spinecho_sim.state._state import (
     ParticleState,
 )
@@ -17,6 +27,8 @@ from spinecho_sim.state._trajectory import (
 
 __all__ = [
     "CoherentSpin",
+    "CoherentSpinList",
+    "GenericSpin",
     "GenericSpinList",
     "ParticleDisplacement",
     "ParticleDisplacementList",
@@ -24,4 +36,6 @@ __all__ = [
     "Spin",
     "Trajectory",
     "TrajectoryList",
+    "sample_gaussian_velocities",
+    "sample_uniform_displacement",
 ]

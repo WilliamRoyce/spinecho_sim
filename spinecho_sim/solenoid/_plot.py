@@ -24,7 +24,7 @@ def plot_spin_component(
     fig, ax = get_figure(ax)
 
     positions = result.positions
-    spins = result.spins.cartesian[:, :, idx]
+    spins = result.spins.cartesian[idx]
     average_spins = np.average(spins, axis=0)
 
     label = [
@@ -34,13 +34,18 @@ def plot_spin_component(
     ][idx]
     (average_line,) = ax.plot(positions, average_spins, label=label)
     color = average_line.get_color()
-    ax.plot(positions, spins.T, alpha=0.1, color=color)
+    ax.plot(
+        positions,
+        np.swapaxes(spins, 0, 1).reshape(positions.size, -1),
+        alpha=0.1,
+        color=color,
+    )
     # Standard error of the mean
     std_spins = np.std(spins, axis=0) / np.sqrt(len(spins))
     ax.fill_between(
         positions,
-        np.clip(average_spins - std_spins, -1, 1),
-        np.clip(average_spins + std_spins, -1, 1),
+        np.clip(average_spins - std_spins, -1, 1).ravel(),
+        np.clip(average_spins + std_spins, -1, 1).ravel(),
         alpha=0.2,
         linestyle="--",
         color=color,
@@ -59,9 +64,9 @@ def plot_spin_intensity(
     fig, ax = get_figure(ax)
 
     positions = result.positions
-    spins = np.average(result.spins.cartesian, axis=0)
+    spins = np.average(result.spins.cartesian, axis=1)
 
-    intensity = spins[:, 0] ** 2 + spins[:, 1] ** 2
+    intensity = spins[0, :] ** 2 + spins[1, :] ** 2
     (line,) = ax.plot(
         positions,
         intensity,
@@ -99,13 +104,18 @@ def plot_spin_phi(
     color = average_line.get_color()
     average_line.set_label(r"$\langle \phi \rangle$")
 
-    ax.plot(positions, (phi.T), alpha=0.1, color=color)
+    ax.plot(
+        positions,
+        np.swapaxes(phi, 0, 1).reshape(positions.size, -1),
+        alpha=0.1,
+        color=color,
+    )
     # Standard error of the mean
     std_spins = np.std(phi, axis=0) / np.sqrt(len(phi))
     ax.fill_between(
         positions,
-        (average_phi - std_spins),
-        (average_phi + std_spins),
+        (average_phi - std_spins).ravel(),
+        (average_phi + std_spins).ravel(),
         alpha=0.2,
         linestyle="--",
         color=color,
@@ -128,13 +138,18 @@ def plot_spin_theta(
     color = average_line.get_color()
     average_line.set_label(r"$\langle \theta \rangle$")
 
-    ax.plot(positions, theta.T, alpha=0.1, color=color)
+    ax.plot(
+        positions,
+        np.swapaxes(theta, 0, 1).reshape(positions.size, -1),
+        alpha=0.1,
+        color=color,
+    )
     # Standard error of the mean
     std_spins = np.std(theta, axis=0) / np.sqrt(len(theta))
     ax.fill_between(
         positions,
-        (average_theta - std_spins),
-        (average_theta + std_spins),
+        (average_theta - std_spins).ravel(),
+        (average_theta + std_spins).ravel(),
         alpha=0.2,
         linestyle="--",
         color=color,

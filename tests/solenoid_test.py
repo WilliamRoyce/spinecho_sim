@@ -9,9 +9,9 @@ from scipy.integrate import solve_ivp  # type: ignore[import-untyped]
 from spinecho_sim.solenoid import Solenoid, SolenoidTrajectory
 from spinecho_sim.state import (
     CoherentSpin,
-    CoherentSpinList,
     ParticleDisplacement,
     ParticleState,
+    Spin,
     Trajectory,
     sample_gaussian_velocities,
     sample_uniform_displacement,
@@ -68,12 +68,12 @@ def simulate_trajectory_cartesean(
     sol = solve_ivp(  # type: ignore[return-value]
         fun=_ds_dx,
         t_span=(z_points[0], z_points[-1]),
-        y0=initial_state.spin.cartesian,
+        y0=initial_state.spin.item(0).cartesian,
         t_eval=z_points,
         vectorized=False,
         rtol=1e-8,
     )
-    spins = CoherentSpinList.from_spins(
+    spins = Spin.from_iter(
         list(starmap(CoherentSpin.from_cartesian, sol.y.T))  # type: ignore[return-value]
     )
     return SolenoidTrajectory(
@@ -90,7 +90,7 @@ def test_simulate_trajectory() -> None:
     particle_velocity = 714
 
     initial_state = ParticleState(
-        spin=CoherentSpin(theta=np.pi / 2, phi=0),
+        spin=CoherentSpin(theta=np.pi / 2, phi=0).as_generic(),
         displacement=sample_uniform_displacement(1, 1.16e-3)[0],
         parallel_velocity=sample_gaussian_velocities(
             1, particle_velocity, 0.225 * particle_velocity
@@ -105,9 +105,12 @@ def test_simulate_trajectory() -> None:
     n_steps = 300
     result = solenoid.simulate_trajectory(initial_state, n_steps=n_steps)
 
-    assert result.spins.cartesian.shape == (n_steps + 1, 3)
+    assert result.spins.cartesian.shape == (3, n_steps + 1, 1)
 
     expected = simulate_trajectory_cartesean(solenoid, initial_state, n_steps=n_steps)
     np.testing.assert_allclose(
-        result.spins.cartesian, expected.spins.cartesian, rtol=1e-5, atol=1e-5
+        result.spins.cartesian.reshape(3, n_steps + 1),
+        expected.spins.cartesian,
+        rtol=1e-5,
+        atol=1e-5,
     )
