@@ -105,7 +105,7 @@ class Solenoid:
         self,
         initial_state: ParticleState,
         n_steps: int = 100,
-    ) -> SolenoidTrajectory[tuple[int]]:
+    ) -> SolenoidTrajectory:
         """Run the spin echo simulation using configured parameters."""
         data = np.empty((n_steps + 1, initial_state.spin.size, 2), dtype=np.float64)
         for i, s in enumerate(initial_state.as_coherent()):
@@ -117,7 +117,7 @@ class Solenoid:
         z_points = np.linspace(0, self.length, n_steps + 1, endpoint=True)
 
         return SolenoidTrajectory(
-            trajectory=Trajectory[tuple[int]](
+            trajectory=Trajectory(
                 spins=spins,
                 displacement=initial_state.displacement,
                 parallel_velocity=initial_state.parallel_velocity,
@@ -145,14 +145,14 @@ class Solenoid:
 
 
 @dataclass(kw_only=True, frozen=True)
-class SolenoidTrajectory[S: tuple[int, ...] = tuple[int, ...]]:
+class SolenoidTrajectory:
     """Represents the trajectory of a particle as it moves through the simulation."""
 
-    trajectory: Trajectory[S]
+    trajectory: Trajectory
     positions: np.ndarray[Any, np.dtype[np.floating]]
 
     @property
-    def spins(self) -> Spin[tuple[*S, int]]:
+    def spins(self) -> Spin[tuple[int, int]]:
         """The spin components from the simulation states."""
         return self.trajectory.spins
 

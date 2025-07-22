@@ -2,11 +2,11 @@ from __future__ import annotations
 
 import matplotlib.pyplot as plt
 import numpy as np
+from spinecho_sim.majorana import simulate_trajectories_majorana
 
 from spinecho_sim import (
     Solenoid,
 )
-from spinecho_sim.majorana import simulate_trajectories_majorana
 from spinecho_sim.state import (
     sample_gaussian_velocities,
     sample_uniform_displacement,

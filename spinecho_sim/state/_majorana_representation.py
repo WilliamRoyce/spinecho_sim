@@ -11,6 +11,8 @@ from scipy.special import comb  # type: ignore[import]
 if TYPE_CHECKING:
     from numpy.typing import NDArray
 
+NUM_SPIN_PARAMS = 2  # Number of parameters per spin (theta, phi)
+
 
 def _get_majorana_coefficients_from_spin_old(
     spin_coefficients: np.ndarray[Any, np.dtype[np.complexfloating]], z_tol: float = 1e8
@@ -78,31 +80,37 @@ def _stars_to_polynomial(
     return np.concatenate((a, np.zeros(n_infinity, dtype=a.dtype)))
 
 
-def _polynomial_to_state(a: NDArray[np.complex128]) -> NDArray[np.complex128]:
+def _polynomial_to_state(
+    a: NDArray[np.complex128],
+) -> NDArray[np.complex128]:
     """Convert a polynomial representation to quantum state coefficients."""
     two_j = len(a) - 1
-    k = np.arange(two_j + 1)
-    binomial_weights = np.sqrt(np.asarray(comb(two_j, k), dtype=np.float64))
+    binomial_weights = np.sqrt(
+        np.asarray(comb(two_j, np.arange(two_j + 1)), dtype=np.float64)
+    )
     c = (a / binomial_weights)[::-1].astype(np.complex128)
-
-    # strip the arbitrary global phase and renormalize
-    idx_max = np.argmax(np.abs(c))
-    c *= np.exp(-1j * np.angle(np.asarray(c[idx_max])))
     c /= np.linalg.norm(c)
+
     return c
 
 
 def stars_to_state(
-    stars: NDArray[np.float64], tol: float = 1e-10
+    stars: np.ndarray[tuple[int, int], np.dtype[np.float64]], *, tol: float = 1e-10
 ) -> NDArray[np.complex128]:
     """Convert a list of Majorana stars (theta, phi) to the corresponding quantum state coefficients."""
+    assert stars.ndim == 2, "Stars must be a 2D array"
+    assert stars.shape[1] == NUM_SPIN_PARAMS, "Stars must have shape (n_stars, 2)"
     a = _stars_to_polynomial(stars, tol=tol)
     return _polynomial_to_state(a.astype(np.complex128))
 
 
 def stars_to_states(
-    stars: NDArray[np.float64], tol: float = 1e-10
+    stars: np.ndarray[tuple[int, int, int], np.dtype[np.float64]], *, tol: float = 1e-10
 ) -> np.ndarray[tuple[int, int], np.dtype[np.complex128]]:
     """Convert multiple sets of Majorana stars (theta, phi) to quantum state coefficients."""
-    # Vectorized as all states have the same number of stars and output length
+    assert stars.ndim == 3, "Stars must be a 3D array"
+    assert stars.shape[2] == NUM_SPIN_PARAMS, (
+        "Stars must have shape (n_groups, n_stars, 2)"
+    )
+    # Conversion of all stars to states
     return np.stack([stars_to_state(stars[i], tol=tol) for i in range(stars.shape[0])])
