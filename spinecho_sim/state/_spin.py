@@ -6,7 +6,7 @@ from typing import Any, overload, override
 import numpy as np
 
 from spinecho_sim.state._companion_helper import majorana_stars
-from spinecho_sim.state._majorana_representation import stars_to_state
+from spinecho_sim.state._majorana_representation import stars_to_states
 
 
 class Spin[S: tuple[int, ...]](Sequence[Any]):
@@ -64,7 +64,7 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         if isinstance(index, int) and self._spins.ndim == 2:  # noqa: PLR2004
             theta, phi = self._spins[index]
             return CoherentSpin(theta=theta, phi=phi)
-
+        # If index is a slice, return a new Spin object with sliced data
         return Spin(self._spins[index])
 
     @override
@@ -82,6 +82,11 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
     def shape(self) -> tuple[*S]:
         """Return the shape of the spin list."""
         return self._spins.shape[:-1]
+
+    @property
+    def n_stars(self) -> int:
+        """Return the number of components in each spin momentum state (e.g., 2J+1 for spin-J)."""
+        return self.shape[-1]
 
     @property
     def size(self) -> int:
@@ -107,6 +112,15 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
     def cartesian(self) -> np.ndarray[tuple[int, *S], np.dtype[np.floating]]:
         """Get the Cartesian coordinates of the spin vector."""
         return np.array([self.x, self.y, self.z], dtype=np.float64)
+
+    @property
+    def as_momentum_states[*S_](
+        self: Spin[tuple[*S_, int]],  # type: ignore[override]
+    ) -> np.ndarray[tuple[int, *S_], np.dtype[np.complex128]]:  # type: ignore[override]
+        """Convert the spin representation to a momentum state."""
+        stars = self._spins.reshape(-1, self.shape[-1], 2)  # Flatten to (n_spins, 2)
+        converted = stars_to_states(stars)
+        return converted.T.reshape(-1, *self.shape[:-1])  # type: ignore[return-value]
 
     @staticmethod
     def from_momentum_state(
@@ -148,11 +162,6 @@ class CoherentSpin(Spin[tuple[()]]):
         self._theta = theta
         self._phi = phi
 
-    def as_momentum_state(self) -> np.ndarray[tuple[int], np.dtype[np.complex128]]:
-        """Convert the coherent spin representation to a momentum state."""
-        star_array = np.array([[self._theta, self._phi]], dtype=np.float64)
-        return stars_to_state(star_array)
-
     @property
     @override
     def theta(self) -> np.ndarray[tuple[()], np.dtype[np.floating]]:
@@ -171,9 +180,9 @@ class CoherentSpin(Spin[tuple[()]]):
         """Return the shape of a single coherent spin."""
         return ()
 
-    def as_generic(self) -> GenericSpin:
+    def as_generic(self, *, n_stars: int = 1) -> GenericSpin:
         """Return a generic Spin representation of this coherent spin."""
-        return Spin.from_iter([self])
+        return Spin.from_iter((self,) * n_stars)
 
     @staticmethod
     def from_cartesian(x: float, y: float, z: float) -> CoherentSpin:

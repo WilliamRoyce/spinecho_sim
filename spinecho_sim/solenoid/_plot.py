@@ -64,9 +64,9 @@ def plot_spin_intensity(
     fig, ax = get_figure(ax)
 
     positions = result.positions
-    spins = np.average(result.spins.cartesian, axis=1)
-
-    intensity = spins[0, :] ** 2 + spins[1, :] ** 2
+    intensity = np.average(
+        result.spins.cartesian[0] ** 2 + result.spins.cartesian[1] ** 2, axis=0
+    )
     (line,) = ax.plot(
         positions,
         intensity,
@@ -167,3 +167,145 @@ def plot_spin_angles(result: SolenoidSimulationResult) -> tuple[Figure, Axes]:
     plot_spin_phi(result, ax=ax)
 
     return fig, ax
+
+
+def plot_spin_state(
+    result: SolenoidSimulationResult,
+    idx: int,
+    *,
+    ax: Axes | None = None,
+) -> tuple[Figure | SubFigure, Axes]:
+    fig, ax = get_figure(ax)
+
+    positions = result.positions
+    states = result.spins.as_momentum_states[idx]
+    average_state_real = np.average(states.real, axis=0)
+    average_state_imag = np.average(states.imag, axis=0)
+
+    n_stars = result.spins.n_stars
+    s = n_stars / 2
+    ms_values = np.linspace(-s, s, n_stars + 1, endpoint=True)
+    ms_labels = [
+        rf"$|m_S={m:.1f} \rangle$"
+        if not m.is_integer()
+        else rf"$|m_S={int(m)} \rangle$"
+        for m in ms_values
+    ]
+
+    # Plot real part
+    (real_line,) = ax.plot(
+        positions, average_state_real, label=f"{ms_labels[idx]}" + "(Re)"
+    )
+    color_real = real_line.get_color()
+    ax.plot(positions, -average_state_real, color=color_real)
+    ax.plot(
+        positions,
+        np.swapaxes(states.real, 0, 1).reshape(positions.size, -1),
+        alpha=0.1,
+        color=color_real,
+    )
+    ax.plot(
+        positions,
+        np.swapaxes(-states.real, 0, 1).reshape(positions.size, -1),
+        alpha=0.1,
+        color=color_real,
+    )
+
+    # Plot imaginary part
+    (imag_line,) = ax.plot(
+        positions, average_state_imag, label=f"{ms_labels[idx]}" + "(Im)"
+    )
+    color_imag = imag_line.get_color()
+    ax.plot(positions, -average_state_imag, color=color_imag)
+    ax.plot(
+        positions,
+        np.swapaxes(states.imag, 0, 1).reshape(positions.size, -1),
+        alpha=0.1,
+        color=color_imag,
+    )
+    ax.plot(
+        positions,
+        np.swapaxes(-states.imag, 0, 1).reshape(positions.size, -1),
+        alpha=0.1,
+        color=color_imag,
+    )
+
+    # Standard error of the mean for real part
+    std_states_real = np.std(states.real, axis=0) / np.sqrt(len(states))
+    ax.fill_between(
+        positions,
+        np.clip(average_state_real - std_states_real, -1, 1).ravel(),
+        np.clip(average_state_real + std_states_real, -1, 1).ravel(),
+        alpha=0.2,
+        linestyle="--",
+        color=color_real,
+    )
+    ax.fill_between(
+        positions,
+        np.clip(-average_state_real - std_states_real, -1, 1).ravel(),
+        np.clip(-average_state_real + std_states_real, -1, 1).ravel(),
+        alpha=0.2,
+        linestyle="--",
+        color=color_real,
+    )
+
+    # Standard error of the mean for imaginary part
+    std_states_imag = np.std(states.imag, axis=0) / np.sqrt(len(states))
+    ax.fill_between(
+        positions,
+        np.clip(average_state_imag - std_states_imag, -1, 1).ravel(),
+        np.clip(average_state_imag + std_states_imag, -1, 1).ravel(),
+        alpha=0.2,
+        linestyle=":",
+        color=color_imag,
+    )
+    ax.fill_between(
+        positions,
+        np.clip(-average_state_imag - std_states_imag, -1, 1).ravel(),
+        np.clip(-average_state_imag + std_states_imag, -1, 1).ravel(),
+        alpha=0.2,
+        linestyle=":",
+        color=color_imag,
+    )
+
+    plot_state_intensity(result, idx=idx, ax=ax.twinx())
+
+    ax.set_ylabel(ms_labels[idx])
+    ax.legend(loc="upper right", fontsize="small")
+    ax.set_xlim(positions[0], positions[-1])
+    ax.set_ylim(-1, 1)
+
+    return fig, ax
+
+
+def plot_spin_states(result: SolenoidSimulationResult) -> tuple[Figure, Axes]:
+    n_stars = result.spins.n_stars
+    fig, axes = plt.subplots(n_stars + 1, 1, figsize=(10, 6), sharex=True)
+
+    for idx, ax in enumerate(axes):
+        plot_spin_state(result, idx, ax=ax)
+    axes[-1].set_xlabel(r"Distance $z$ along Solenoid Axis")
+    fig.tight_layout()
+    return fig, axes
+
+
+def plot_state_intensity(
+    result: SolenoidSimulationResult, idx: int, *, ax: Axes | None = None
+) -> tuple[Figure | SubFigure, Axes, Line2D]:
+    fig, ax = get_figure(ax)
+
+    positions = result.positions
+    states = result.spins.as_momentum_states[idx]
+    average_state_abs = np.average(np.abs(states), axis=0)
+
+    (line,) = ax.plot(
+        positions,
+        average_state_abs,
+        color="black",
+        linestyle="--",
+    )
+
+    ax.set_xlim(positions[0], positions[-1])
+    ax.set_ylim(-1, 1)
+
+    return fig, ax, line
