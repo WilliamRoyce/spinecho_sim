@@ -23,7 +23,7 @@ if __name__ == "__main__":
     num_spins = 1
     initial_states = [
         ParticleState(
-            spin=CoherentSpin(theta=np.pi / 2, phi=0).as_generic(n_stars=1),
+            spin=CoherentSpin(theta=np.pi / 2, phi=0).as_generic(),
             displacement=displacement,
             parallel_velocity=velocity,
         )
