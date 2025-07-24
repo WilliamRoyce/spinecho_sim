@@ -1,4 +1,16 @@
-"""Module for representing and manipulating spin states."""
+"""Module for representing and manipulating spin states.
+
+In this package, spin states are represented by the `Spin` class,
+which encapsulates the properties of a spin.
+An exaple of its useage can be seen below.
+
+.. literalinclude:: ../../examples/spin_representation.py
+    :language: python
+    :lineno-start: 8
+    :lines: 8-43
+    :dedent: 4
+
+"""
 
 from __future__ import annotations
 
