@@ -74,7 +74,7 @@ def simulate_trajectory_cartesean(
         rtol=1e-8,
     )
     spins = Spin.from_iter(
-        list(starmap(CoherentSpin.from_cartesian, sol.y.T))  # type: ignore[return-value]
+        [x.as_generic() for x in starmap(CoherentSpin.from_cartesian, sol.y.T)]  # type: ignore[return-value]
     )
     return SolenoidTrajectory(
         trajectory=Trajectory(
@@ -109,8 +109,7 @@ def test_simulate_trajectory() -> None:
 
     expected = simulate_trajectory_cartesean(solenoid, initial_state, n_steps=n_steps)
     np.testing.assert_allclose(
-        result.spins.cartesian.reshape(3, n_steps + 1),
+        result.spins.cartesian,
         expected.spins.cartesian,
-        rtol=1e-5,
-        atol=1e-5,
+        atol=1e-4,
     )

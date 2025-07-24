@@ -1,6 +1,9 @@
 from __future__ import annotations
 
+from typing import Any
+
 import numpy as np
+import pytest
 
 from spinecho_sim.state import Spin
 
@@ -35,3 +38,42 @@ def test_spin_states_roundtrip() -> None:
             atol=1e-8,
             err_msg=f"Round-trip failed: {original_state} vs {recovered_state}",
         )
+
+
+@pytest.mark.parametrize(
+    ("momentum_state", "expected_majorana"),
+    [
+        (
+            np.array([1.0, 0.0, 1.0]),
+            np.array([[np.pi / 2, np.pi / 2], [np.pi / 2, 3 * np.pi / 2]]),
+        ),
+        (
+            np.array([0.0, 1.0, 1.0]),
+            np.array([[2 * np.arctan(1 / np.sqrt(2)), np.pi], [np.pi, 0.0]]),
+        ),
+        (
+            np.array([1.0, 1.0, 0.0]),
+            np.array([[0.0, 0.0], [2 * np.arctan(np.sqrt(2)), np.pi]]),
+        ),
+        (np.array([1.0, 0.0, 0.0]), np.array([[0.0, 0.0], [0.0, np.pi]])),
+        (np.array([0.0, 1.0, 0.0]), np.array([[0.0, np.pi], [np.pi, 0.0]])),
+        (np.array([0.0, 0.0, 1.0]), np.array([[np.pi, 0.0], [np.pi, 0.0]])),
+    ],
+)
+def test_spin_states_majorana(
+    momentum_state: np.ndarray[Any, np.dtype[np.complex128]],
+    expected_majorana: np.ndarray[Any, np.dtype[np.float64]],
+) -> None:
+    momentum_state /= np.linalg.norm(momentum_state)
+
+    spin_state = Spin.from_momentum_states(np.array([momentum_state]).T)[0]
+    np.testing.assert_array_almost_equal(
+        expected_majorana[..., 0],
+        spin_state.theta,
+        err_msg="Majorana points do not match expected theta values",
+    )
+    np.testing.assert_array_almost_equal(
+        expected_majorana[..., 1],
+        spin_state.phi,
+        err_msg="Majorana points do not match expected phi values",
+    )

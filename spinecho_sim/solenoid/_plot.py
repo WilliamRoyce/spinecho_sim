@@ -5,7 +5,7 @@ from typing import TYPE_CHECKING
 import numpy as np
 from matplotlib import pyplot as plt
 
-from spinecho_sim.util import get_figure
+from spinecho_sim.util import Measure, get_figure, get_measure
 
 if TYPE_CHECKING:
     from matplotlib.axes import Axes
@@ -225,8 +225,8 @@ def plot_spin_state_arg(
 def plot_spin_state(
     result: SolenoidSimulationResult,
     idx: int,
-    measure: str,
     *,
+    measure: Measure = "abs",
     ax: Axes | None = None,
 ) -> tuple[Figure | SubFigure, Axes]:
     fig, ax = get_figure(ax)
@@ -277,33 +277,6 @@ def plot_spin_state(
     return fig, ax
 
 
-def get_measure(arr: np.ndarray, measure: str) -> np.ndarray:
-    if measure == "real":
-        return np.real(arr)
-    if measure == "imag":
-        return np.imag(arr)
-    if measure == "abs":
-        return np.abs(arr)
-    if measure == "arg":
-        return np.angle(arr)
-    msg = f"Unknown measure: {measure}. Use 'real', 'imag', 'abs', or 'arg'."
-    raise ValueError(msg)
-
-
-def plot_spin_states(result: SolenoidSimulationResult) -> tuple[Figure, Axes]:
-    n_stars = result.spins.n_stars
-    fig, axes = plt.subplots(n_stars + 1, 1, figsize=(10, 6), sharex=True)
-
-    for idx, ax in enumerate(axes):
-        plot_spin_state(result, idx, "abs", ax=ax)
-        plot_spin_state(result, idx, "arg", ax=ax)
-        # plot_spin_state_arg(result, idx, ax=ax)
-        plot_state_intensity(result, idx, ax=ax.twinx())
-    axes[-1].set_xlabel(r"Distance $z$ along Solenoid Axis")
-    fig.tight_layout()
-    return fig, axes
-
-
 def plot_state_intensity(
     result: SolenoidSimulationResult, idx: int, *, ax: Axes | None = None
 ) -> tuple[Figure | SubFigure, Axes, Line2D]:
@@ -313,14 +286,24 @@ def plot_state_intensity(
     states = result.spins.momentum_states[idx]
     average_state_abs = np.average(np.abs(states), axis=0)
 
-    (line,) = ax.plot(
-        positions,
-        average_state_abs,
-        color="black",
-        linestyle="--",
-    )
+    (line,) = ax.plot(positions, average_state_abs)
+    line.set_linestyle("--")
+    line.set_color("black")
 
     ax.set_xlim(positions[0], positions[-1])
     ax.set_ylim(-np.pi, np.pi)
 
     return fig, ax, line
+
+
+def plot_spin_states(result: SolenoidSimulationResult) -> tuple[Figure, Axes]:
+    n_stars = result.spins.n_stars
+    fig, axes = plt.subplots(n_stars + 1, 1, figsize=(10, 6), sharex=True)
+
+    for idx, ax in enumerate(axes):
+        plot_spin_state(result, idx, measure="abs", ax=ax)
+        plot_spin_state(result, idx, measure="arg", ax=ax)
+        plot_state_intensity(result, idx, ax=ax.twinx())
+    axes[-1].set_xlabel(r"Distance $z$ along Solenoid Axis")
+    fig.tight_layout()
+    return fig, axes
