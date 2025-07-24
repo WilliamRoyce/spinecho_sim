@@ -8,7 +8,6 @@ import numpy as np
 from scipy.special import comb  # type: ignore[import]
 
 from spinecho_sim.state._companion_helper import majorana_stars
-from spinecho_sim.state._majorana_representation import stars_to_state
 
 NUM_SPIN_PARAMS = 2  # Number of parameters per spin (theta, phi)
 
@@ -121,49 +120,35 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         return np.array([self.x, self.y, self.z], dtype=np.float64)
 
     @property
-    def as_momentum_states[*S_](
+    def momentum_states[*S_](
         self: Spin[tuple[*S_, int]],  # type: ignore[override]
     ) -> np.ndarray[tuple[int, *S_], np.dtype[np.complex128]]:  # type: ignore[override]
         """Convert the spin representation to a momentum state."""
-        stars = self._spins.reshape(
-            -1, self.n_stars, 2
-        )  # Flatten to (n_spins, n_stars, 2)
+        # Flatten to (n_spins, n_stars, 2)
+        stars = self._spins.reshape(-1, self.n_stars, 2)
         state_list = [
             _majorana_polynomial_components(Spin[tuple[int]](stars[i]))
             for i in range(stars.shape[0])
         ]
-
-        return (
-            np.stack(state_list, axis=0)
-            .astype(np.complex128)
-            .reshape(-1, *self.shape[:-1])
-        )  # type: ignore[return-value]
-
-    @property
-    def as_momentum_states_old[*S_](
-        self: Spin[tuple[*S_, int]],  # type: ignore[override]
-    ) -> np.ndarray[tuple[int, *S_], np.dtype[np.complex128]]:  # type: ignore[override]
-        """Convert the spin representation to a momentum state."""
-        stars = self._spins.reshape(-1, self.n_stars, 2)  # Flatten to (n_spins, 2)
-        state_list = [stars_to_state(stars[i]) for i in range(stars.shape[0])]
-        return (
-            np.stack(state_list, axis=0)
-            .astype(np.complex128)
-            .reshape(-1, *self.shape[:-1])
-        )  # type: ignore[return-value]
+        return np.stack(state_list, axis=-1).reshape(-1, *self.shape[:-1])  # type: ignore[return-value]
 
     @staticmethod
-    def from_momentum_state(
-        spin_coefficients: np.ndarray[Any, np.dtype[np.complex128]],
+    def from_momentum_states(
+        spin_coefficients: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
     ) -> Spin[tuple[int]]:
-        """Create a Spin from a momentum state represented by complex coefficients."""
-        if spin_coefficients.ndim == 1:
-            spin_coefficients = spin_coefficients[np.newaxis, :]
-        stars_array = majorana_stars(spin_coefficients)  # shape: (n_groups, n_stars, 2)
-        # Convert each group of (theta, phi) pairs to CoherentSpin objects
-        # Convert to ndarray of shape (n_groups, n_stars, 2)
-        spins_array = np.array(stars_array, dtype=np.float64)
-        return Spin(spins_array)  # type: ignore[return-value]
+        """Create a Spin from a series of momentum states represented by complex coefficients.
+
+        This function takes a list of spin coefficients
+        ```python
+        spin_coefficients[i,j]
+        ```
+        where i is the state index and j is the list index.
+
+        """
+        assert spin_coefficients.ndim == 2  # noqa: PLR2004
+        # TODO: make majorana_stars accept state index as first index
+        stars_array = majorana_stars(spin_coefficients.transpose())
+        return Spin(stars_array)  # type: ignore[return-value]
 
     @staticmethod
     def from_iter[S_: tuple[int, ...]](
