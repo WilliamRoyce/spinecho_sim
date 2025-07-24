@@ -7,16 +7,56 @@ from typing import Any, overload, override
 import numpy as np
 from scipy.special import comb  # type: ignore[import]
 
-from spinecho_sim.state._companion_helper import majorana_stars
+from spinecho_sim.state._majorana import majorana_stars
 
 NUM_SPIN_PARAMS = 2  # Number of parameters per spin (theta, phi)
+
+
+def _get_polynomial_product(
+    states: Spin[tuple[int]],
+) -> np.ndarray[tuple[int], np.dtype[np.complexfloating]]:
+    """
+    Compute the coefficients of product polynomial.
+
+    P(z) = ∏ (a_i z - b_i), returned as a vector of coefficients.
+    """
+    a = np.cos(states.theta / 2)
+    b = np.sin(states.theta / 2) * np.exp(1j * states.phi)
+    # Ensure a and b are 1D arrays
+    a = np.asarray(a).ravel()
+    b = np.asarray(b).ravel()
+    factors = [
+        np.array([-b_i, a_i]) for a_i, b_i in zip(a, b, strict=True)
+    ]  # swapped a and b
+    return reduce(np.convolve, factors)[
+        ::-1
+    ]  # Reverse the order to match Majorana convention
+
+
+def _majorana_polynomial_components(
+    states: Spin[tuple[int]],
+) -> np.ndarray[tuple[int], np.dtype[np.complexfloating]]:
+    """
+    Compute A_m using the polynomial representation.
+
+    Returns
+    -------
+    A : np.ndarray, shape (N+1,)
+        Coefficients A_m for m = -j to j
+    """
+    coefficients = _get_polynomial_product(states)
+    k = np.arange(states.size + 1)
+    binomial_weights = np.sqrt(np.asarray(comb(states.size, k), dtype=np.float64))
+    state = coefficients / binomial_weights
+    state /= np.linalg.norm(state)  # Normalize the state
+    return state
 
 
 class Spin[S: tuple[int, ...]](Sequence[Any]):
     """A class representing a collection of lists of CoherentSpin objects."""
 
     def __init__[*S_](
-        self: Spin[tuple[int, *S_]],  # type: ignore[override]
+        self: Spin[tuple[*S_]],  # type: ignore[override]
         spins: np.ndarray[tuple[*S_, int], np.dtype[np.float64]],  # type: ignore[override]
     ) -> None:
         self._spins = spins
@@ -146,9 +186,8 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
 
         """
         assert spin_coefficients.ndim == 2  # noqa: PLR2004
-        # TODO: make majorana_stars accept state index as first index
-        stars_array = majorana_stars(spin_coefficients.transpose())
-        return Spin(stars_array)  # type: ignore[return-value]
+        stars_array = majorana_stars(spin_coefficients)
+        return Spin(stars_array)
 
     @staticmethod
     def from_iter[S_: tuple[int, ...]](
@@ -164,46 +203,6 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
             dtype=np.float64,
         )
         return Spin(spins_array)  # type: ignore[return-value]
-
-
-def _get_polynomial_product(
-    states: Spin[tuple[int]],
-) -> np.ndarray[tuple[int], np.dtype[np.complexfloating]]:
-    """
-    Compute the coefficients of product polynomial.
-
-    P(z) = ∏ (a_i z - b_i), returned as a vector of coefficients.
-    """
-    a = np.cos(states.theta / 2)
-    b = np.sin(states.theta / 2) * np.exp(1j * states.phi)
-    # Ensure a and b are 1D arrays
-    a = np.asarray(a).ravel()
-    b = np.asarray(b).ravel()
-    factors = [
-        np.array([-b_i, a_i]) for a_i, b_i in zip(a, b, strict=True)
-    ]  # swapped a and b
-    return reduce(np.convolve, factors)[
-        ::-1
-    ]  # Reverse the order to match Majorana convention
-
-
-def _majorana_polynomial_components(
-    states: Spin[tuple[int]],
-) -> np.ndarray[tuple[int], np.dtype[np.complexfloating]]:
-    """
-    Compute A_m using the polynomial representation.
-
-    Returns
-    -------
-    A : np.ndarray, shape (N+1,)
-        Coefficients A_m for m = -j to j
-    """
-    coefficients = _get_polynomial_product(states)
-    k = np.arange(states.size + 1)
-    binomial_weights = np.sqrt(np.asarray(comb(states.size, k), dtype=np.float64))
-    state = coefficients / binomial_weights
-    state /= np.linalg.norm(state)  # Normalize the state
-    return state
 
 
 class CoherentSpin(Spin[tuple[()]]):

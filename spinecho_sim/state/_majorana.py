@@ -22,31 +22,6 @@ def _majorana_precompute(
     return w, c_template
 
 
-def majorana_stars(
-    spin_coefficients: np.ndarray[Any, np.dtype[np.complex128]], z_tol: float = 1e8
-) -> np.ndarray[Any, np.dtype[np.float64]]:
-    """Compute Majorana points for multiple sets of spin coefficients."""
-    # Calculate j from the length of the spin vector
-    two_j = spin_coefficients.shape[1] - 1  # Spin-j vector has 2j+1 coefficients
-    w, c0 = _majorana_precompute(two_j)
-    points_list = _majorana_roots(spin_coefficients, w, c0)
-
-    # Take absolute value and argument for all points
-    abs_z = np.abs(points_list)
-    angle_z = np.angle(points_list)
-
-    theta = np.where(abs_z > z_tol, np.pi, 2 * np.arctan(abs_z))
-    phi = np.where(abs_z > z_tol, 0, angle_z % (2 * np.pi))
-
-    all_stars = np.empty((len(points_list), two_j, 2), dtype=np.float64)
-    for i in range(len(points_list)):
-        stars = np.column_stack((theta[i], phi[i]))  # shape (n_points, 2)
-        while stars.shape[0] < two_j:
-            stars = np.vstack((stars, [np.pi, 0.0]))
-        all_stars[i, :, :] = stars
-    return all_stars  # shape (n_states, two_j, 2)
-
-
 def _majorana_roots(
     spin_coefficients: NDArray[np.complex128],  # c_m  with m = -J…J, length 2J+1
     w: NDArray[np.float64],  # from majorana_precompute
@@ -86,3 +61,29 @@ def _majorana_roots(
                 )
         roots_array[idx, :] = roots
     return roots_array
+
+
+def majorana_stars(
+    spin_coefficients: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
+    z_tol: float = 1e8,
+) -> np.ndarray[Any, np.dtype[np.float64]]:
+    """Compute Majorana points for multiple sets of spin coefficients."""
+    # Calculate j from the length of the spin vector
+    two_j = spin_coefficients.shape[0] - 1  # Spin-j vector has 2j+1 coefficients
+    w, c0 = _majorana_precompute(two_j)
+    points_list = _majorana_roots(spin_coefficients.transpose(), w, c0)
+
+    # Take absolute value and argument for all points
+    abs_z = np.abs(points_list)
+    angle_z = np.angle(points_list)
+
+    theta = np.where(abs_z > z_tol, np.pi, 2 * np.arctan(abs_z))
+    phi = np.where(abs_z > z_tol, 0, angle_z % (2 * np.pi))
+
+    all_stars = np.empty((len(points_list), two_j, 2), dtype=np.float64)
+    for i in range(len(points_list)):
+        stars = np.column_stack((theta[i], phi[i]))  # shape (n_points, 2)
+        while stars.shape[0] < two_j:
+            stars = np.vstack((stars, [np.pi, 0.0]))
+        all_stars[i, :, :] = stars
+    return all_stars  # shape (n_states, two_j, 2)
