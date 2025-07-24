@@ -7,11 +7,9 @@ from spinecho_sim import (
     ParticleState,
     Solenoid,
 )
-from spinecho_sim.solenoid import (
-    plot_spin_states,
-)
+from spinecho_sim.solenoid import plot_spin_states
 from spinecho_sim.state import (
-    CoherentSpin,
+    Spin,
     sample_gaussian_velocities,
     sample_uniform_displacement,
 )
@@ -19,9 +17,14 @@ from spinecho_sim.state import (
 if __name__ == "__main__":
     particle_velocity = 714
     num_spins = 1
+    spin_states = np.array(
+        [
+            [(1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
+        ],
+    )
     initial_states = [
         ParticleState(
-            spin=CoherentSpin(theta=np.pi / 2, phi=0).as_generic(n_stars=1),
+            spin=Spin.from_momentum_state(spin_states),
             displacement=displacement,
             parallel_velocity=velocity,
         )
@@ -40,26 +43,6 @@ if __name__ == "__main__":
         current=0.1,
     )
     result = solenoid.simulate_trajectories(initial_states, n_steps=1000)
-
-    # fig, ax = plot_spin_components(result)
-    # ax.set_title(
-    #     r"Classical Larmor Precession of ${}^3$He in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$, "
-    #     f"{num_spins} spins"
-    # )
-    # ax.legend(loc="lower right", fontsize="small")
-
-    # output_path = "./examples/classical_solenoid.cartesian.png"
-    # plt.savefig(output_path, dpi=600, bbox_inches="tight")
-
-    # fig, ax = plot_spin_angles(result)
-    # ax.set_title(
-    #     r"Classical Larmor Precession of ${}^3$He in a Sinusoidal Magnetic Field $\mathbf{B} \approx B_0 \mathbf{z}$, "
-    #     f"{num_spins} spins"
-    # )
-    # ax.legend(loc="lower right", fontsize="small")
-
-    # output_path = "./examples/classical_solenoid.angle.png"
-    # plt.savefig(output_path, dpi=600, bbox_inches="tight")
 
     fig, ax = plot_spin_states(result)
 
