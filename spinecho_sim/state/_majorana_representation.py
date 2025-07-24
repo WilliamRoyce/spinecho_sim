@@ -14,52 +14,6 @@ if TYPE_CHECKING:
 NUM_SPIN_PARAMS = 2  # Number of parameters per spin (theta, phi)
 
 
-def _get_majorana_coefficients_from_spin_old(
-    spin_coefficients: np.ndarray[Any, np.dtype[np.complexfloating]], z_tol: float = 1e8
-) -> np.ndarray[Any, np.dtype[np.float64]]:
-    """Compute the Majorana points (Bloch sphere coordinates) for a given quantum state."""
-    two_j = len(spin_coefficients) - 1
-
-    # build polynomial coefficients a_k
-    k_arr = np.arange(len(spin_coefficients))
-    binomial_arr = np.sqrt(np.asarray(comb(two_j, k_arr), dtype=np.float64))
-    polynomial_coefficients = binomial_arr * spin_coefficients[two_j - k_arr]
-
-    z = p.polyroots(polynomial_coefficients)  # returns 2J complex roots
-    abs_z = np.abs(z)
-    angle_z = np.angle(z)
-
-    theta = np.where(abs_z > z_tol, np.pi, 2 * np.arctan(abs_z))
-    phi = np.where(abs_z > z_tol, 0, angle_z % (2 * np.pi))
-    stars = np.column_stack((theta, phi))
-    # ensure exactly 2j points, if lost degrees due to vanishing highest coefficients
-    while stars.shape[0] < two_j:
-        stars = np.vstack((stars, [np.pi, 0.0]))
-    return stars
-
-
-def majorana_stars_old(
-    spin_coefficients: np.ndarray[Any, np.dtype[np.complexfloating]], z_tol: float = 1e8
-) -> np.ndarray[Any, np.dtype[np.float64]]:
-    """Compute Majorana points for multiple sets of spin coefficients."""
-    points_list = [
-        _get_majorana_coefficients_from_spin_old(c, z_tol=z_tol)
-        for c in spin_coefficients
-    ]
-    # Calculate j from the length of the spin vector
-    j = (spin_coefficients.shape[1] - 1) / 2  # Spin-j vector has 2j+1 coefficients
-    num_points = int(2 * j)
-    padded_points = np.empty((len(points_list), num_points, 2), dtype=np.float64)
-    for i, points in enumerate(points_list):
-        n = points.shape[0]
-        if n < num_points:
-            pad = np.tile([np.pi, 0.0], (num_points - n, 1))
-            padded_points[i] = np.vstack((points, pad))
-        else:
-            padded_points[i] = points
-    return padded_points
-
-
 def _stars_to_polynomial(
     stars: np.ndarray[Any, np.dtype[np.float64]], tol: float = 1e-8
 ) -> np.ndarray[Any, np.dtype[np.complexfloating]]:

@@ -1,18 +1,25 @@
 from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Sequence
+from functools import reduce
 from typing import Any, overload, override
 
 import numpy as np
+from scipy.special import comb  # type: ignore[import]
 
 from spinecho_sim.state._companion_helper import majorana_stars
-from spinecho_sim.state._majorana_representation import stars_to_states
+from spinecho_sim.state._majorana_representation import stars_to_state
+
+NUM_SPIN_PARAMS = 2  # Number of parameters per spin (theta, phi)
 
 
 class Spin[S: tuple[int, ...]](Sequence[Any]):
     """A class representing a collection of lists of CoherentSpin objects."""
 
-    def __init__(self, spins: np.ndarray[tuple[*S, int], np.dtype[np.float64]]) -> None:
+    def __init__[*S_](
+        self: Spin[tuple[int, *S_]],  # type: ignore[override]
+        spins: np.ndarray[tuple[*S_, int], np.dtype[np.float64]],  # type: ignore[override]
+    ) -> None:
         self._spins = spins
         # Spins are stored as an ndarray of shape (..., 2)
         # Where spin[..., 0] is theta and spin[..., 1] is phi
@@ -81,7 +88,7 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
     @property
     def shape(self) -> tuple[*S]:
         """Return the shape of the spin list."""
-        return self._spins.shape[:-1]
+        return self._spins.shape[:-1]  # type: ignore[return-value]
 
     @property
     def n_stars(self) -> int:
@@ -118,9 +125,32 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         self: Spin[tuple[*S_, int]],  # type: ignore[override]
     ) -> np.ndarray[tuple[int, *S_], np.dtype[np.complex128]]:  # type: ignore[override]
         """Convert the spin representation to a momentum state."""
-        stars = self._spins.reshape(-1, self.shape[-1], 2)  # Flatten to (n_spins, 2)
-        converted = stars_to_states(stars)
-        return converted.T.reshape(-1, *self.shape[:-1])  # type: ignore[return-value]
+        stars = self._spins.reshape(
+            -1, self.n_stars, 2
+        )  # Flatten to (n_spins, n_stars, 2)
+        state_list = [
+            _majorana_polynomial_components(Spin[tuple[int]](stars[i]))
+            for i in range(stars.shape[0])
+        ]
+
+        return (
+            np.stack(state_list, axis=0)
+            .astype(np.complex128)
+            .reshape(-1, *self.shape[:-1])
+        )  # type: ignore[return-value]
+
+    @property
+    def as_momentum_states_old[*S_](
+        self: Spin[tuple[*S_, int]],  # type: ignore[override]
+    ) -> np.ndarray[tuple[int, *S_], np.dtype[np.complex128]]:  # type: ignore[override]
+        """Convert the spin representation to a momentum state."""
+        stars = self._spins.reshape(-1, self.n_stars, 2)  # Flatten to (n_spins, 2)
+        state_list = [stars_to_state(stars[i]) for i in range(stars.shape[0])]
+        return (
+            np.stack(state_list, axis=0)
+            .astype(np.complex128)
+            .reshape(-1, *self.shape[:-1])
+        )  # type: ignore[return-value]
 
     @staticmethod
     def from_momentum_state(
@@ -133,7 +163,7 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         # Convert each group of (theta, phi) pairs to CoherentSpin objects
         # Convert to ndarray of shape (n_groups, n_stars, 2)
         spins_array = np.array(stars_array, dtype=np.float64)
-        return Spin(spins_array)
+        return Spin(spins_array)  # type: ignore[return-value]
 
     @staticmethod
     def from_iter[S_: tuple[int, ...]](
@@ -148,7 +178,47 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
             ],
             dtype=np.float64,
         )
-        return Spin(spins_array)
+        return Spin(spins_array)  # type: ignore[return-value]
+
+
+def _get_polynomial_product(
+    states: Spin[tuple[int]],
+) -> np.ndarray[tuple[int], np.dtype[np.complexfloating]]:
+    """
+    Compute the coefficients of product polynomial.
+
+    P(z) = ∏ (a_i z - b_i), returned as a vector of coefficients.
+    """
+    a = np.cos(states.theta / 2)
+    b = np.sin(states.theta / 2) * np.exp(1j * states.phi)
+    # Ensure a and b are 1D arrays
+    a = np.asarray(a).ravel()
+    b = np.asarray(b).ravel()
+    factors = [
+        np.array([-b_i, a_i]) for a_i, b_i in zip(a, b, strict=True)
+    ]  # swapped a and b
+    return reduce(np.convolve, factors)[
+        ::-1
+    ]  # Reverse the order to match Majorana convention
+
+
+def _majorana_polynomial_components(
+    states: Spin[tuple[int]],
+) -> np.ndarray[tuple[int], np.dtype[np.complexfloating]]:
+    """
+    Compute A_m using the polynomial representation.
+
+    Returns
+    -------
+    A : np.ndarray, shape (N+1,)
+        Coefficients A_m for m = -j to j
+    """
+    coefficients = _get_polynomial_product(states)
+    k = np.arange(states.size + 1)
+    binomial_weights = np.sqrt(np.asarray(comb(states.size, k), dtype=np.float64))
+    state = coefficients / binomial_weights
+    state /= np.linalg.norm(state)  # Normalize the state
+    return state
 
 
 class CoherentSpin(Spin[tuple[()]]):
@@ -188,7 +258,9 @@ class CoherentSpin(Spin[tuple[()]]):
     def from_cartesian(x: float, y: float, z: float) -> CoherentSpin:
         """Create a Spin from Cartesian coordinates."""
         r = np.sqrt(x**2 + y**2 + z**2)
-        assert np.isclose(r, 1, rtol=1e-3), f"Spin vector must be normalized. r = {r}"
+        assert np.isclose(r, 1, rtol=1e-3), (
+            f"Spin vector must be normalized. r = {r}, inputs: x={x}, y={y}, z={z}"
+        )
         return CoherentSpin(theta=np.arccos(z / r), phi=np.arctan2(y, x))
 
 
