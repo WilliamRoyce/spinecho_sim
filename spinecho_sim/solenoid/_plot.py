@@ -178,7 +178,7 @@ def plot_spin_state_arg(
     fig, ax = get_figure(ax)
 
     positions = result.positions
-    momentum_states = result.spins.as_momentum_states
+    momentum_states = result.spins.momentum_states
     states = momentum_states[idx, :, :]
 
     average_state_arg = np.average(np.angle(states), axis=0)
@@ -232,7 +232,7 @@ def plot_spin_state(
     fig, ax = get_figure(ax)
 
     positions = result.positions
-    states = result.spins.as_momentum_states[idx, :, :]
+    states = result.spins.momentum_states[idx, :, :]
 
     average_state_measure = np.average(get_measure(states, measure), axis=0)
 
@@ -310,7 +310,7 @@ def plot_state_intensity(
     fig, ax = get_figure(ax)
 
     positions = result.positions
-    states = result.spins.as_momentum_states[idx]
+    states = result.spins.momentum_states[idx]
     average_state_abs = np.average(np.abs(states), axis=0)
 
     (line,) = ax.plot(
