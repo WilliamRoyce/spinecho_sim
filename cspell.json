@@ -25,7 +25,9 @@
         "pycache",
         "venv",
         "vdot",
-        "tqdm"
+        "tqdm",
+        "eigvals",
+        "monic"
     ],
     "userWords": [
         "Larmor"

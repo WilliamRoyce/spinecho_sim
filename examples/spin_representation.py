@@ -24,7 +24,7 @@ if __name__ == "__main__":
     assert classical_spin_from_cartesian.phi == classical_spin.phi
     assert classical_spin_from_cartesian == classical_spin
 
-    # To repersent a general spin, we need to store a list of majhorana spin components.
+    # To represent a general spin, we need to store a list of majhorana spin components.
     # We can convert between a coherent spin and a majorana spin representation
     # using the as_generic method.
     # Here, n_stars sets the number of majorana spins in the representation
