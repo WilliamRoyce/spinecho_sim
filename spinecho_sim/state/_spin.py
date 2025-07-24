@@ -2,7 +2,7 @@ from __future__ import annotations
 
 from collections.abc import Iterable, Iterator, Sequence
 from functools import reduce
-from typing import Any, overload, override
+from typing import Any, cast, overload, override
 
 import numpy as np
 from scipy.special import comb  # type: ignore[import]
@@ -52,7 +52,7 @@ def _majorana_polynomial_components(
     return state
 
 
-class Spin[S: tuple[int, ...]](Sequence[Any]):
+class Spin[S: tuple[int, ...]](Sequence[Any]):  # noqa: PLR0904
     """A class representing a collection of lists of CoherentSpin objects."""
 
     def __init__[*S_](
@@ -64,6 +64,19 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         # Where spin[..., 0] is theta and spin[..., 1] is phi
         assert self._spins.shape[-1] == 2  # noqa: PLR2004
         assert self._spins.ndim > 1, "Spins must have at least 2 dimensions."
+
+    @override
+    def __eq__(self, value: object) -> bool:
+        if isinstance(value, Spin):
+            value = cast("Spin[tuple[int, ...]]", value)
+            return np.array_equal(self.theta, value.theta) and np.array_equal(
+                self.phi, value.phi
+            )
+        return False
+
+    @override
+    def __hash__(self) -> int:
+        return hash((self.theta, self.phi))
 
     @property
     def ndim(self) -> int:
@@ -173,8 +186,8 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         return np.stack(state_list, axis=-1).reshape(-1, *self.shape[:-1])  # type: ignore[return-value]
 
     @staticmethod
-    def from_momentum_states(
-        spin_coefficients: np.ndarray[tuple[int, int], np.dtype[np.complex128]],
+    def from_momentum_state(
+        spin_coefficients: np.ndarray[tuple[int], np.dtype[np.complex128]],
     ) -> Spin[tuple[int]]:
         """Create a Spin from a series of momentum states represented by complex coefficients.
 
@@ -185,9 +198,9 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):
         where i is the state index and j is the list index.
 
         """
-        assert spin_coefficients.ndim == 2  # noqa: PLR2004
-        stars_array = majorana_stars(spin_coefficients)
-        return Spin(stars_array)
+        assert spin_coefficients.ndim == 1
+        stars_array = majorana_stars(np.array([spin_coefficients]).T)
+        return Spin(stars_array.reshape(-1, 2))
 
     @staticmethod
     def from_iter[S_: tuple[int, ...]](
