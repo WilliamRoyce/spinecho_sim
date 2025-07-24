@@ -6,26 +6,19 @@ from spinecho_sim.state import Spin
 
 
 def test_spin_states_roundtrip() -> None:
-    # spin_states = np.array(
-    #     [
-    #         [(1.0 + 0.0j) / np.sqrt(2), (0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2)],
-    #         [(0.0 + 0.0j), (1.0 + 0.0j) / np.sqrt(2), (1.0 + 0.0j) / np.sqrt(2)],
-    #     ],
-    # )
-    rng = np.random.default_rng(seed=42)
-    spin_states = []
-    for _ in range(3):  # Generate 3 random spin states
-        coeffs = rng.normal(size=3) + 1j * rng.normal(size=3)
-        coeffs /= np.linalg.norm(coeffs)
-        spin_states.append(coeffs)
-    spin_states = np.array(spin_states, dtype=np.complex128)
+    rng = np.random.default_rng()
+    spin_states = rng.normal(size=(3, 5)) + 1j * rng.normal(size=(3, 5))
+    spin_states /= np.linalg.norm(spin_states, axis=0)[np.newaxis, :]
 
-    recovered_states = Spin.from_momentum_state(spin_states).as_momentum_states
+    recovered_states = Spin.from_momentum_states(spin_states).momentum_states
+    assert recovered_states.shape == spin_states.shape, (
+        f"Expected shape {spin_states.shape}, got {recovered_states.shape}"
+    )
 
     # Check if recovered states match original (up to global phase)
-    for original_state, recovered_state in zip(
-        spin_states, recovered_states, strict=True
-    ):
+    for i in range(spin_states.shape[1]):
+        original_state = spin_states[:, i]
+        recovered_state = recovered_states[:, i]
         assert np.isclose(np.linalg.norm(original_state), 1.0), (
             "Original state is not normalized"
         )
