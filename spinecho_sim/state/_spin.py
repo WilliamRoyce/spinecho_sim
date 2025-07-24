@@ -18,19 +18,11 @@ def _get_polynomial_product(
     """
     Compute the coefficients of product polynomial.
 
-    P(z) = ∏ (a_i z - b_i), returned as a vector of coefficients.
+    P(z) = ∏ (b_i - a_i z), returned as a vector of coefficients.
     """
-    a = np.cos(states.theta / 2)
-    b = np.sin(states.theta / 2) * np.exp(1j * states.phi)
-    # Ensure a and b are 1D arrays
-    a = np.asarray(a).ravel()
-    b = np.asarray(b).ravel()
-    factors = [
-        np.array([-b_i, a_i]) for a_i, b_i in zip(a, b, strict=True)
-    ]  # swapped a and b
-    return reduce(np.convolve, factors)[
-        ::-1
-    ]  # Reverse the order to match Majorana convention
+    a = np.sin(states.theta / 2) * np.exp(1j * states.phi)
+    b = -np.cos(states.theta / 2)
+    return reduce(np.convolve, np.stack([a, b], axis=-1))[::-1]
 
 
 def _majorana_polynomial_components(
@@ -48,8 +40,7 @@ def _majorana_polynomial_components(
     k = np.arange(states.size + 1)
     binomial_weights = np.sqrt(np.asarray(comb(states.size, k), dtype=np.float64))
     state = coefficients / binomial_weights
-    state /= np.linalg.norm(state)  # Normalize the state
-    return state
+    return state / np.linalg.norm(state)
 
 
 class Spin[S: tuple[int, ...]](Sequence[Any]):  # noqa: PLR0904
@@ -98,10 +89,6 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):  # noqa: PLR0904
         """Return the phi angle of the spin."""
         return self._spins[..., 1]
 
-    def item(self, index: int) -> CoherentSpin:
-        """Iterate over all CoherentSpin objects."""
-        return CoherentSpin(theta=self.theta.item(index), phi=self.phi.item(index))
-
     @overload
     def __getitem__(self: Spin[tuple[int]], index: int) -> CoherentSpin: ...
 
@@ -131,6 +118,10 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):  # noqa: PLR0904
         """Iterate over all CoherentSpin objects (flattened)."""
         for group in self._spins:
             yield from group
+
+    def item(self, index: int) -> CoherentSpin:
+        """Iterate over all CoherentSpin objects."""
+        return CoherentSpin(theta=self.theta.item(index), phi=self.phi.item(index))
 
     def flat_iter(self) -> Iterator[CoherentSpin]:
         """Iterate over all CoherentSpin objects in a flat manner."""
@@ -183,6 +174,7 @@ class Spin[S: tuple[int, ...]](Sequence[Any]):  # noqa: PLR0904
             _majorana_polynomial_components(Spin[tuple[int]](stars[i]))
             for i in range(stars.shape[0])
         ]
+        # Undo the flattening and reshape to match the original shape
         return np.stack(state_list, axis=-1).reshape(-1, *self.shape[:-1])  # type: ignore[return-value]
 
     @staticmethod
