@@ -9,8 +9,6 @@ from scipy.special import comb  # type: ignore[import]
 
 from spinecho_sim.state._majorana import majorana_stars
 
-NUM_SPIN_PARAMS = 2  # Number of parameters per spin (theta, phi)
-
 
 def _get_polynomial_product(
     states: Spin[tuple[int]],
