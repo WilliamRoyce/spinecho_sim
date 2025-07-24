@@ -2,7 +2,7 @@
 
 In this package, spin states are represented by the `Spin` class,
 which encapsulates the properties of a spin.
-An exaple of its useage can be seen below.
+An example of its useage can be seen below.
 
 .. literalinclude:: ../../examples/spin_representation.py
     :language: python
