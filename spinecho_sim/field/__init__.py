@@ -2,6 +2,10 @@
 
 from __future__ import annotations
 
+from spinecho_sim.field._cylindrical_winding import (
+    ProportionalPitchWinding,
+    make_axis_region_from_winding,
+)
 from spinecho_sim.field._field import (
     AnalyticFieldRegion,
     AxisDataFieldRegion,
@@ -32,12 +36,14 @@ __all__ = [
     "FieldSequence",
     "FieldSuperposition",
     "HeatmapConfig",
+    "ProportionalPitchWinding",
     "RotatedFieldRegion",
     "ScaledFieldRegion",
     "SolenoidRegion",
     "TranslatedFieldRegion",
     "UniformFieldRegion",
     "ZeroField",
+    "make_axis_region_from_winding",
     "plot_field_along_axis",
     "plot_field_heatmap",
 ]
